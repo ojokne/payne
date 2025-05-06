@@ -96,9 +96,9 @@ export default function SignupPage() {
       
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-10">
-          {/* <Link href="/">
+          <Link href="/">
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-2">Payne</h1>
-          </Link> */}
+          </Link>
           <h2 className="text-2xl font-semibold text-gray-900">Create your account</h2>
           <p className="text-gray-600 mt-2">Start accepting payments with USDC today</p>
         </div>
