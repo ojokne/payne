@@ -101,7 +101,7 @@ export default function WhatsNext() {
         {/* CTA Button */}
         <div className="mt-16 text-center">
           <Link
-            href="/register"
+            href="/signup"
             className="inline-flex items-center bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl text-lg font-medium transition shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40"
           >
             Get Started Today
