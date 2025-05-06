@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/components/providers/providers";
 // import "@coinbase/onchainkit/styles.css";
-import {
-  Inter,
-  Manrope,
-} from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
+import Header from "@/components/common/header";
 
 // Load Inter
 const inter = Inter({
@@ -36,10 +34,12 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
-      <body
-       className="font-body"
-       >
-        <Providers>{children}</Providers>
+      <body className="font-body">
+        <Providers>
+          {/* Navigation */}
+          <Header />
+          {children}
+        </Providers>
       </body>
     </html>
   );

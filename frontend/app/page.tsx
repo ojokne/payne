@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Hero from "@/components/landing/hero";
-import Header from "@/components/landing/header";
 import WhyUse from "@/components/landing/why-use-section";
 import HowItWorks from "@/components/landing/how-it-works";
 import Architecture from "@/components/landing/architecture";
@@ -15,8 +14,6 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-screen font-sans dark:bg-background dark:text-white bg-white text-black">
-      {/* Navigation */}
-      <Header />
 
       <main className="flex-grow">
         {/* Hero Section - Enhanced with vibrant design */}
