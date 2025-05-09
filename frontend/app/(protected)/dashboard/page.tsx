@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   QrCode,
   RefreshCcw,
@@ -22,8 +22,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@/config/firebase";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect, usePublicClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { USDC_ADDRESS } from "@/constants/constants";
+import { erc20Abi } from "viem";
 
 export default function Dashboard() {
   const [showAmounts, setShowAmounts] = useState(false);
@@ -59,6 +61,12 @@ export default function Dashboard() {
 
   const { disconnect } = useDisconnect();
 
+  const publicClient = usePublicClient();
+
+  const [usdcBalance, setUsdcBalance] = useState(0);
+
+  const [wallettype, setWalletType] = useState("");
+
   // Function to truncate address
   const truncateAddress = (address: string) => {
     if (!address) return "";
@@ -73,6 +81,39 @@ export default function Dashboard() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const initWallet = async () => {
+    if (!address) return;
+    const code = await publicClient?.getCode({
+      address,
+    });
+    console.log(code);
+
+    const balance = await publicClient?.readContract({
+      address: USDC_ADDRESS,
+      abi: erc20Abi,
+      functionName: "balanceOf",
+      args: [address],
+    });
+
+    const formattedBalance = balance
+      ? parseFloat(balance.toString()) / 10 ** 6
+      : 0;
+
+    setUsdcBalance(formattedBalance);
+
+   if (code && code !== "0x") {
+      setWalletType("smart");
+    } else {
+      setWalletType("eoa");
+    }
+  };
+
+  useEffect(() => {
+    if (address && publicClient) {
+      initWallet();
+    }
+  }, [address, publicClient]);
 
   if (!address) {
     return (
@@ -109,7 +150,10 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-gray-500 mb-1">
-                Connected Wallet
+                Connected Wallet{" "}
+                <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                  {wallettype} wallet
+                </span>
               </p>
               <div className="flex items-center">
                 <div className="bg-purple-100 text-purple-800 font-mono py-1 px-3 rounded-lg text-sm">
@@ -155,13 +199,13 @@ export default function Dashboard() {
             <p className="text-purple-100 text-sm mb-1">Total USDC</p>
             {showAmounts ? (
               <div>
-                <p className="text-3xl font-bold mb-1">1,250 USDC</p>
+                <p className="text-3xl font-bold mb-1">{usdcBalance} USDC</p>
                 {/* <p className="text-sm opacity-80">≈ 1,250 USD</p> */}
               </div>
             ) : (
               <div>
                 <p className="text-3xl font-bold mb-1">•••• USDC</p>
-                <p className="text-sm opacity-80">•••• USD</p>
+                {/* <p className="text-sm opacity-80">•••• USD</p> */}
               </div>
             )}
           </div>
