@@ -18,6 +18,7 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebase";
 import { useRouter } from "next/navigation";
+import Notification from "@/components/common/notification";
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -215,38 +216,6 @@ export default function SignupPage() {
     }
   };
 
-  const Notification = ({
-    type,
-    message,
-    onClose,
-  }: {
-    type: string;
-    message: string;
-    onClose: () => void;
-  }) => {
-    return (
-      <div
-        className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg flex items-center gap-3 max-w-md animate-slide-in-right ${
-          type === "success"
-            ? "bg-green-50 border-l-4 border-green-500 text-green-700"
-            : "bg-red-50 border-l-4 border-red-500 text-red-700"
-        }`}
-      >
-        {type === "success" ? (
-          <Check size={20} className="text-green-500 flex-shrink-0" />
-        ) : (
-          <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
-        )}
-        <p>{message}</p>
-        <button
-          onClick={onClose}
-          className="ml-auto text-gray-400 hover:text-gray-600"
-        >
-          <X size={18} />
-        </button>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-4 py-12">

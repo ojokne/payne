@@ -13,6 +13,7 @@ import Link from "next/link";
 import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/config/firebase";
 import { useRouter } from "next/navigation";
+import Notification from "@/components/common/notification";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -144,39 +145,7 @@ export default function LoginPage() {
     setShowPassword(!showPassword);
   };
 
-  const Notification = ({
-    type,
-    message,
-    onClose,
-  }: {
-    type: string;
-    message: string;
-    onClose: () => void;
-  }) => {
-    return (
-      <div
-        className={`p-4 rounded-lg flex items-center gap-3 ${
-          type === "success"
-            ? "bg-green-50 border-l-4 border-green-500 text-green-700"
-            : "bg-red-50 border-l-4 border-red-500 text-red-700"
-        }`}
-      >
-        {type === "success" ? (
-          <Check size={20} className="text-green-500 flex-shrink-0" />
-        ) : (
-          <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
-        )}
-        <p>{message}</p>
-        <button
-          onClick={onClose}
-          className="ml-auto text-gray-400 hover:text-gray-600"
-        >
-          <X size={18} />
-        </button>
-      </div>
-    );
-  };
-
+  
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       if (user) {
