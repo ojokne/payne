@@ -18,9 +18,14 @@ import {
   CreditCard,
 } from "lucide-react";
 import Link from "next/link";
+import { auth } from "@/config/firebase";
 
 export default function Dashboard() {
   const [showAmounts, setShowAmounts] = useState(false);
+  const displayName = auth.currentUser?.displayName;
+
+  console.log(displayName);
+
   // Mock data - would come from API in real implementation
   const recentInvoices = [
     { id: 1, amount: 250, date: "Today, 2:30 PM", status: "paid" },
@@ -49,7 +54,9 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto">
       {/* Welcome & Stats Overview */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome back!</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+          Welcome {auth.currentUser?.displayName}
+        </h1>
         <p className="text-gray-600">
           Here's what's happening with your business
         </p>

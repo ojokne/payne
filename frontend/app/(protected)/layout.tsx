@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -12,7 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 import Image from "next/image";
-import { signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/config/firebase";
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
@@ -36,6 +36,14 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       console.error("Logout failed", error);
     }
   };
+
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.push("/");
+      }
+    });
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
