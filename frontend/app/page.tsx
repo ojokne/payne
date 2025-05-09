@@ -8,13 +8,14 @@ import Architecture from "@/components/landing/architecture";
 import WhatsNext from "@/components/landing/whats-next";
 import FAQ from "@/components/landing/faq";
 import Footer from "@/components/landing/footer";
+import Header from "@/components/common/header";
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen font-sans dark:bg-background dark:text-white bg-white text-black">
-
+      <Header />
       <main className="flex-grow">
         {/* Hero Section - Enhanced with vibrant design */}
         <Hero />
@@ -42,7 +43,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer/>
+      <Footer />
     </div>
   );
 }

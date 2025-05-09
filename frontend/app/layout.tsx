@@ -3,7 +3,6 @@ import "./globals.css";
 import { Providers } from "@/components/providers/providers";
 // import "@coinbase/onchainkit/styles.css";
 import { Inter, Manrope } from "next/font/google";
-import Header from "@/components/common/header";
 
 // Load Inter
 const inter = Inter({
@@ -36,8 +35,6 @@ export default function RootLayout({
       </head>
       <body className="font-body">
         <Providers>
-          {/* Navigation */}
-          <Header />
           {children}
         </Providers>
       </body>
