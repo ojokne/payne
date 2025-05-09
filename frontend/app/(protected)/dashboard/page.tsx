@@ -26,11 +26,11 @@ import { useAccount, useDisconnect, usePublicClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { USDC_ADDRESS } from "@/constants/constants";
 import { erc20Abi } from "viem";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function Dashboard() {
   const [showAmounts, setShowAmounts] = useState(false);
   const [copied, setCopied] = useState(false);
-  const displayName = auth.currentUser?.displayName;
 
   // Mock data - would come from API in real implementation
   const recentInvoices = [
@@ -67,6 +67,8 @@ export default function Dashboard() {
 
   const [wallettype, setWalletType] = useState("");
 
+  const [name, setName] = useState<string | null>("");
+
   // Function to truncate address
   const truncateAddress = (address: string) => {
     if (!address) return "";
@@ -102,7 +104,7 @@ export default function Dashboard() {
 
     setUsdcBalance(formattedBalance);
 
-   if (code && code !== "0x") {
+    if (code && code !== "0x") {
       setWalletType("smart");
     } else {
       setWalletType("eoa");
@@ -110,6 +112,11 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setName(user.displayName);
+      }
+    });
     if (address && publicClient) {
       initWallet();
     }
@@ -140,7 +147,7 @@ export default function Dashboard() {
       {/* Welcome & Stats Overview */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          Welcome {auth.currentUser?.displayName}
+          Welcome {name}
         </h1>
         <p className="text-gray-600">
           Here's what's happening with your business
