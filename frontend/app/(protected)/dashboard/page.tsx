@@ -16,15 +16,19 @@ import {
   EyeOff,
   BarChart2,
   CreditCard,
+  Copy,
+  Check,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@/config/firebase";
+import { useAccount, useDisconnect } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function Dashboard() {
   const [showAmounts, setShowAmounts] = useState(false);
+  const [copied, setCopied] = useState(false);
   const displayName = auth.currentUser?.displayName;
-
-  console.log(displayName);
 
   // Mock data - would come from API in real implementation
   const recentInvoices = [
@@ -50,6 +54,46 @@ export default function Dashboard() {
     },
   ];
 
+  // get address of connected wallet
+  const { address } = useAccount();
+
+  const { disconnect } = useDisconnect();
+
+  // Function to truncate address
+  const truncateAddress = (address: string) => {
+    if (!address) return "";
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  // Function to handle copy
+  const handleCopy = () => {
+    if (address) {
+      navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (!address) {
+    return (
+      <div className="mt-3 sm:mt-5">
+        <h3 className="text-lg font-medium leading-6 text-gray-900">
+          Wallet Connection Required
+        </h3>
+        <div className="mt-2">
+          <p className="text-sm text-gray-500">
+            To proceed with this action, you need to connect your digital
+            wallet. This allows you to securely interact with blockchain
+            features and manage your assets.
+          </p>
+        </div>
+        <div className="py-6">
+          <ConnectButton />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Welcome & Stats Overview */}
@@ -60,17 +104,59 @@ export default function Dashboard() {
         <p className="text-gray-600">
           Here's what's happening with your business
         </p>
+
+        <div className="mt-4 p-4 bg-white rounded-xl shadow">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">
+                Connected Wallet
+              </p>
+              <div className="flex items-center">
+                <div className="bg-purple-100 text-purple-800 font-mono py-1 px-3 rounded-lg text-sm">
+                  {truncateAddress(address)}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors"
+                title="Copy full address"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    <span className="text-sm">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    <span className="text-sm">Copy</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => disconnect()}
+                className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg transition-colors"
+                title="Disconnect wallet"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="text-sm">Disconnect</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Total USDC Card */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-5 mb-6 text-white shadow-md">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-purple-100 text-sm mb-1">Total USDC Received</p>
+            <p className="text-purple-100 text-sm mb-1">Total USDC</p>
             {showAmounts ? (
               <div>
                 <p className="text-3xl font-bold mb-1">1,250 USDC</p>
-                <p className="text-sm opacity-80">≈ 1,250 USD</p>
+                {/* <p className="text-sm opacity-80">≈ 1,250 USD</p> */}
               </div>
             ) : (
               <div>
@@ -97,7 +183,7 @@ export default function Dashboard() {
             )}
           </button>
         </div>
-        <div className="mt-4 pt-4 border-t border-white/20 flex justify-between text-sm">
+        {/* <div className="mt-4 pt-4 border-t border-white/20 flex justify-between text-sm">
           <div>
             <p className="opacity-75">Last 7 days</p>
             <p className="font-medium">
@@ -110,7 +196,7 @@ export default function Dashboard() {
               {showAmounts ? "2,430 USDC" : "•••• USDC"}
             </p>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Quick Actions */}

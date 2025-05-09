@@ -89,7 +89,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           </nav>
 
           {/* Wallet info for desktop */}
-          <div className="p-4 mx-4 mb-6 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+          {/* <div className="p-4 mx-4 mb-6 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
             <div className="flex items-center mb-3">
               <Wallet className="h-5 w-5 mr-2" />
               <p className="text-sm font-medium">Smart Wallet</p>
@@ -101,7 +101,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
               <span className="text-sm font-medium">Balance:</span>
               <span className="text-sm font-bold">1,250 USDC</span>
             </div>
-          </div>
+          </div> */}
 
           {/* Logout button for desktop */}
           <button
