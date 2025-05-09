@@ -13,7 +13,7 @@ import Link from "next/link";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  updateProfile, 
+  updateProfile,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebase";
@@ -266,6 +266,19 @@ export default function SignupPage() {
         </div>
 
         <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+          {/* Notification Banner */}
+          {notification.show && (
+            <div className="mb-6">
+              <Notification
+                type={notification.type}
+                message={notification.message}
+                onClose={() =>
+                  setNotification({ ...notification, show: false })
+                }
+              />
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             {/* Business Name */}
             <div className="mb-5">
@@ -500,19 +513,6 @@ export default function SignupPage() {
               )}
             </button>
           </form>
-
-          {/* Notification */}
-          {notification.show && (
-            <div
-              className={`mt-4 p-4 rounded-lg text-sm ${
-                notification.type === "success"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {notification.message}
-            </div>
-          )}
         </div>
 
         <div className="text-center mt-6">
