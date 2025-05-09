@@ -1,7 +1,23 @@
 "use client";
 import { useState } from "react";
-import { ArrowRight, Check, Info, Eye, EyeOff } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Info,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  X,
+} from "lucide-react";
 import Link from "next/link";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile, 
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/config/firebase";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -21,6 +37,13 @@ export default function SignupPage() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState({
+    show: false,
+    type: "", // "success" or "error"
+    message: "",
+  });
+  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -89,13 +112,140 @@ export default function SignupPage() {
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (validateForm()) {
-      // Submit the form - replace with your actual signup logic
-      console.log("Form submitted:", formData);
+    if (!validateForm()) {
+      return;
     }
+
+    setLoading(true);
+    const normalizedEmail = formData.email.trim().toLowerCase();
+
+    try {
+      // Create user with email and password
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        normalizedEmail,
+        formData.password
+      );
+
+      // Save user data to Firestore
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        businessName: formData.businessName,
+        email: formData.email,
+        createdAt: new Date().toISOString(),
+        role: "merchant",
+      });
+
+      // Update the user's profile with the business name
+      await updateProfile(userCredential.user, {
+        displayName: formData.businessName,
+      });
+
+      // Show success notification
+      setNotification({
+        show: true,
+        type: "success",
+        message: "Account created successfully! Redirecting...",
+      });
+
+      router.push("/dashboard");
+    } catch (error: any) {
+      setLoading(false);
+      console.error("Signup error:", error);
+
+      // Handle different error codes
+      let errorMessage = "An unexpected error occurred. Please try again.";
+
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          try {
+            // Try to sign in with the provided credentials
+            await signInWithEmailAndPassword(
+              auth,
+              normalizedEmail,
+              formData.password
+            );
+
+            // Show success message if sign-in works
+            setNotification({
+              show: true,
+              type: "success",
+              message: "You already have an account. Signing you in...",
+            });
+
+            // Redirect
+            setTimeout(() => {
+              router.push("/dashboard");
+            }, 1500);
+            return;
+          } catch (signInError) {
+            // If sign-in fails, tell user to login manually
+            errorMessage =
+              "Account already exists. Please login with the correct password.";
+          }
+          break;
+
+        case "auth/weak-password":
+          errorMessage =
+            "Password is too weak. Please use at least 6 characters.";
+          break;
+
+        case "auth/invalid-email":
+          errorMessage = "Invalid email address format.";
+          break;
+
+        case "auth/network-request-failed":
+          errorMessage =
+            "Network error. Please check your connection and try again.";
+          break;
+
+        case "auth/too-many-requests":
+          errorMessage =
+            "Too many unsuccessful sign-up attempts. Please try again later or reset your password.";
+          break;
+      }
+
+      setNotification({
+        show: true,
+        type: "error",
+        message: errorMessage,
+      });
+    }
+  };
+
+  const Notification = ({
+    type,
+    message,
+    onClose,
+  }: {
+    type: string;
+    message: string;
+    onClose: () => void;
+  }) => {
+    return (
+      <div
+        className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg flex items-center gap-3 max-w-md animate-slide-in-right ${
+          type === "success"
+            ? "bg-green-50 border-l-4 border-green-500 text-green-700"
+            : "bg-red-50 border-l-4 border-red-500 text-red-700"
+        }`}
+      >
+        {type === "success" ? (
+          <Check size={20} className="text-green-500 flex-shrink-0" />
+        ) : (
+          <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
+        )}
+        <p>{message}</p>
+        <button
+          onClick={onClose}
+          className="ml-auto text-gray-400 hover:text-gray-600"
+        >
+          <X size={18} />
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -313,12 +463,56 @@ export default function SignupPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium flex items-center justify-center transition shadow-md hover:shadow-lg"
+              disabled={loading}
+              className={`w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium flex items-center justify-center transition shadow-md hover:shadow-lg ${
+                loading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             >
-              Create Account
-              <ArrowRight className="ml-2 h-5 w-5" />
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Creating Account...
+                </>
+              ) : (
+                <>
+                  Create Account
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </>
+              )}
             </button>
           </form>
+
+          {/* Notification */}
+          {notification.show && (
+            <div
+              className={`mt-4 p-4 rounded-lg text-sm ${
+                notification.type === "success"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {notification.message}
+            </div>
+          )}
         </div>
 
         <div className="text-center mt-6">
