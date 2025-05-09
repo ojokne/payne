@@ -2,12 +2,22 @@
 
 import { ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, BarChart2, CreditCard, Settings, Wallet } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Home,
+  BarChart2,
+  CreditCard,
+  Settings,
+  Wallet,
+  LogOut,
+} from "lucide-react";
 import Image from "next/image";
+import { signOut } from "firebase/auth";
+import { auth } from "@/config/firebase";
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   // Navigation items
   const navItems = [
@@ -16,6 +26,16 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     { name: "Analytics", href: "/analytics", icon: BarChart2 },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login"); // Redirect to login page after logout
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -74,16 +94,33 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
               <span className="text-sm font-bold">1,250 USDC</span>
             </div>
           </div>
+
+          {/* Logout button for desktop */}
+          <button
+            onClick={handleLogout}
+            className="mx-4 mb-8 px-4 py-3 flex items-center text-sm font-medium text-gray-700 hover:text-red-600 rounded-xl transition-colors hover:bg-red-50"
+          >
+            <LogOut className="mr-3 h-5 w-5" />
+            Logout
+          </button>
         </div>
       </div>
 
       {/* display logo on mobile */}
-      <div className="md:hidden px-4 pt-6">
+      <div className="md:hidden px-4 pt-6 flex justify-between items-center">
         <Link href="/dashboard" className="flex items-center">
           <span className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
             Payne
           </span>
         </Link>
+        {/* Logout button for mobile */}
+        <button
+          onClick={handleLogout}
+          className="p-2 rounded-full hover:bg-gray-100"
+          aria-label="Logout"
+        >
+          <LogOut className="h-5 w-5 text-gray-600" />
+        </button>
       </div>
       {/* Main content */}
       <div className="flex flex-col min-w-0 flex-1 md:pl-72">
