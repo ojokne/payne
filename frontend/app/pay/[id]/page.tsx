@@ -231,65 +231,238 @@ export default function PaymentPage() {
   // Show error state
   if (error || !invoice) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="pb-3 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+        {/* Header with logo */}
+        <div className="pb-6 flex items-center justify-center">
           <Link href="/dashboard" className="flex items-center">
             <span className="text-5xl py-1 font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
               Payne
             </span>
           </Link>
         </div>
-        <div className="bg-red-50 text-red-800 p-4 rounded-lg max-w-md w-full">
-          <p className="font-medium">Error</p>
-          <p className="mt-1">{error || "Invoice not found"}</p>
 
-          {/* Add the refresh button when error is about user rejection */}
-          {error?.includes("denied the payment") && (
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        {/* Error card */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-8 max-w-md w-full">
+          {/* Error icon */}
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-6">
+            <svg
+              className="h-6 w-6 text-red-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              Try Again
-            </button>
-          )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d={
+                  error?.includes("insufficient funds")
+                    ? "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    : error?.includes("wrong network")
+                    ? "M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    : "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                }
+              />
+            </svg>
+          </div>
 
-          {/* Add these buttons for specific error types */}
-          {error?.includes("insufficient funds") && (
-            <div className="mt-4 flex flex-col space-y-2">
-              <a
-                href="https://app.uniswap.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-              >
-                Get USDC
-              </a>
+          {/* Error heading - customize based on error type */}
+          <h2 className="text-xl font-semibold text-gray-900 text-center mb-2">
+            {error?.includes("insufficient funds")
+              ? "Insufficient Balance"
+              : error?.includes("denied")
+              ? "Payment Cancelled"
+              : error?.includes("wrong network")
+              ? "Network Error"
+              : error?.includes("gas")
+              ? "Gas Fee Error"
+              : error?.includes("allowance")
+              ? "Approval Required"
+              : "Payment Error"}
+          </h2>
+
+          {/* Error description */}
+          <p className="text-center text-gray-600 mb-6">
+            {error || "Invoice not found. Please check the URL and try again."}
+          </p>
+
+          <div className="space-y-3">
+            {/* Conditional buttons based on error type */}
+
+            {/* User rejected payment */}
+            {error?.includes("denied the payment") && (
               <button
                 onClick={() => window.location.reload()}
-                className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-md shadow-sm text-sm font-medium hover:bg-gray-50"
+                className="w-full py-2.5 px-4 flex justify-center items-center rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm"
               >
+                <svg
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
                 Try Again
               </button>
-            </div>
-          )}
+            )}
 
-          {error?.includes("wrong network") && (
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              Switch Network & Try Again
-            </button>
-          )}
+            {/* Insufficient funds */}
+            {error?.includes("insufficient funds") && (
+              <div className="space-y-3">
+                <a
+                  href="https://app.uniswap.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-4 flex justify-center items-center rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm"
+                >
+                  <svg
+                    className="h-5 w-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Get USDC on Uniswap
+                </a>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="w-full py-2.5 px-4 flex justify-center items-center rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-all"
+                >
+                  <svg
+                    className="h-5 w-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  Try Again
+                </button>
+                <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                  <p>
+                    Your wallet needs more USDC to complete this payment. Get
+                    USDC from an exchange or Uniswap, then return to try again.
+                  </p>
+                </div>
+              </div>
+            )}
 
-          {(error?.includes("gas") || error?.includes("allowance")) && (
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              Try Again
-            </button>
-          )}
+            {/* Wrong network */}
+            {error?.includes("wrong network") && (
+              <>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="w-full py-2.5 px-4 flex justify-center items-center rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm"
+                >
+                  <svg
+                    className="h-5 w-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Switch Network & Try Again
+                </button>
+                <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                  <p>
+                    This payment requires Ethereum mainnet. Please open your
+                    wallet and switch networks before trying again.
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* Gas or allowance errors */}
+            {(error?.includes("gas") || error?.includes("allowance")) && (
+              <>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="w-full py-2.5 px-4 flex justify-center items-center rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm"
+                >
+                  <svg
+                    className="h-5 w-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  Try Again
+                </button>
+                {error?.includes("gas") && (
+                  <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                    <p>
+                      You need ETH to pay for transaction gas fees. Add ETH to
+                      your wallet before trying again.
+                    </p>
+                  </div>
+                )}
+                {error?.includes("allowance") && (
+                  <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                    <p>
+                      You need to approve USDC spending first. When you try
+                      again, confirm both the approval and payment transactions.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Generic error case - if no specific error matched */}
+            {!error?.includes("denied the payment") &&
+              !error?.includes("insufficient funds") &&
+              !error?.includes("wrong network") &&
+              !error?.includes("gas") &&
+              !error?.includes("allowance") && (
+                <button
+                  onClick={() => window.location.reload()}
+                  className="w-full py-2.5 px-4 flex justify-center items-center rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm"
+                >
+                  <svg
+                    className="h-5 w-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  Go Back and Try Again
+                </button>
+              )}
+          </div>
         </div>
       </div>
     );
