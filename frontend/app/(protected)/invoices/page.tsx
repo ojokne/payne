@@ -5,20 +5,14 @@ import {
   QrCode,
   Search,
   CalendarIcon,
-  Share2,
-  X,
   ChevronDown,
-  Download,
-  ExternalLink,
   Loader2,
   PlusCircle,
   FileText,
   AlertCircle,
 } from "lucide-react";
-import Image from "next/image";
 import { format } from "date-fns";
-import QRCode from "react-qr-code";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import Link from "next/link";
 import { Invoice } from "@/types/types";
@@ -41,12 +35,16 @@ export default function InvoicesPage() {
 
   // Fetch invoices from Firestore
   useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        setIsLoading(true);
-        const invoicesRef = collection(db, "invoices");
-        const querySnapshot = await getDocs(invoicesRef);
+    setIsLoading(true);
 
+    // Create a reference to the invoices collection
+    const invoicesRef = collection(db, "invoices");
+    const q = query(invoicesRef);
+
+    // Set up the real-time listener
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
         const invoicesData: Invoice[] = [];
 
         querySnapshot.forEach((doc) => {
@@ -74,15 +72,17 @@ export default function InvoicesPage() {
         });
 
         setInvoices(invoicesData);
-      } catch (err) {
-        console.error("Error fetching invoices:", err);
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error("Error listening to invoices:", error);
         setError("Failed to load invoices. Please try again later.");
-      } finally {
         setIsLoading(false);
       }
-    };
+    );
 
-    fetchInvoices();
+    // Clean up the listener when the component unmounts
+    return () => unsubscribe();
   }, []);
 
   // Filter invoices based on search, date and status
