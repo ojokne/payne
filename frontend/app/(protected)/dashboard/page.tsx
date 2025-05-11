@@ -28,36 +28,27 @@ import { USDC_ADDRESS } from "@/constants/constants";
 import { erc20Abi } from "viem";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "@/config/firebase";
+import { Invoice } from "@/types/types";
+import { format } from "date-fns";
 
 export default function Dashboard() {
   const [showAmounts, setShowAmounts] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Mock data - would come from API in real implementation
-  const recentInvoices = [
-    { id: 1, amount: 250, date: "Today, 2:30 PM", status: "paid" },
-    { id: 2, amount: 45, date: "Today, 11:20 AM", status: "paid" },
-    { id: 3, amount: 120, date: "Yesterday", status: "paid" },
-  ];
+  const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
+  const [pendingInvoices, setPendingInvoices] = useState<Invoice[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
 
-  const pendingSettlements = [
-    { id: 101, amount: 75, date: "Today, 4:15 PM", confirmations: "2/3" },
-    { id: 102, amount: 200, date: "Today, 10:30 AM", confirmations: "1/3" },
-  ];
-
-  const topCustomers = [
-    { id: 201, name: "John D.", initials: "JD", amount: 450, transactions: 3 },
-    { id: 202, name: "Sarah M.", initials: "SM", amount: 320, transactions: 2 },
-    {
-      id: 203,
-      name: "Robert K.",
-      initials: "RK",
-      amount: 275,
-      transactions: 2,
-    },
-  ];
-
-  const router = useRouter()
+  const router = useRouter();
 
   // get address of connected wallet
   const { address } = useAccount();
@@ -92,7 +83,6 @@ export default function Dashboard() {
     const code = await publicClient?.getCode({
       address,
     });
-    console.log(code);
 
     const balance = await publicClient?.readContract({
       address: USDC_ADDRESS,
@@ -124,6 +114,90 @@ export default function Dashboard() {
       initWallet();
     }
   }, [address, publicClient]);
+
+  useEffect(() => {
+    setInvoicesLoading(true);
+
+    // Query for paid invoices (most recent first)
+    const paidInvoicesRef = collection(db, "invoices");
+    const paidQuery = query(
+      paidInvoicesRef,
+      where("status", "==", "paid"),
+      orderBy("paidAt", "desc"),
+      limit(3)
+    );
+
+    // Query for pending invoices
+    const pendingInvoicesRef = collection(db, "invoices");
+    const pendingQuery = query(
+      pendingInvoicesRef,
+      where("status", "==", "pending"),
+      orderBy("dueDate", "asc"), // Earliest due first
+      limit(5)
+    );
+
+    // Set up real-time listeners
+    const paidUnsubscribe = onSnapshot(paidQuery, (snapshot) => {
+      const invoices: Invoice[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+
+        invoices.push({
+          id: doc.id,
+          invoiceNumber: data.invoiceNumber,
+          customerName: data.customerName,
+          amount: parseFloat(data.amount),
+          dueDate: new Date(data.dueDate),
+          status: data.status,
+          paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
+          merchantId: data.merchantId,
+          merchantName: data.merchantName,
+          merchantAddress: data.merchantAddress,
+          paidAt: new Date(data?.paidAt),
+        });
+      });
+
+      setRecentInvoices(invoices);
+    });
+
+    const pendingUnsubscribe = onSnapshot(pendingQuery, (snapshot) => {
+      const invoices: Invoice[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+
+        // Convert timestamp to Date if needed
+        const dueDate =
+          data.dueDate instanceof Date
+            ? data.dueDate
+            : data.dueDate?.toDate
+            ? data.dueDate.toDate()
+            : new Date(data.dueDate);
+
+        invoices.push({
+          id: doc.id,
+          invoiceNumber: data.invoiceNumber,
+          customerName: data.customerName,
+          amount: parseFloat(data.amount),
+          dueDate: dueDate,
+          status: data.status,
+          paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
+          merchantId: data.merchantId,
+          merchantName: data.merchantName,
+          merchantAddress: data.merchantAddress,
+          paidAt: data?.paidAt,
+        });
+      });
+
+      setPendingInvoices(invoices);
+      setInvoicesLoading(false);
+    });
+
+    // Cleanup
+    return () => {
+      paidUnsubscribe();
+      pendingUnsubscribe();
+    };
+  }, [address]); // Re-run when wallet address changes
 
   if (!address) {
     return (
@@ -256,8 +330,9 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <h2 className="text-lg font-medium text-gray-900 mb-3">Quick Actions</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 overflow-x-auto pb-2">
-        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer"
-        onClick={()=> router.push("/invoices/create")}
+        <button
+          className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer"
+          onClick={() => router.push("/invoices/create")}
         >
           <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
             <QrCode className="h-5 w-5 text-purple-600" />
@@ -291,91 +366,139 @@ export default function Dashboard() {
 
       {/* Two column layout for desktop, stacked for mobile */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Pending Settlements - Now in left column */}
+        {/* Pending Settlements */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <h3 className="font-medium text-gray-900 mb-4">
-            Pending Settlements
-          </h3>
-          {pendingSettlements.length > 0 ? (
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-medium text-gray-900">Pending Payments</h3>
+            {!invoicesLoading && pendingInvoices.length > 0 && (
+              <span className="text-xs font-medium px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
+                $
+                {pendingInvoices
+                  .reduce((sum, inv) => sum + inv.amount, 0)
+                  .toFixed(2)}{" "}
+                due
+              </span>
+            )}
+          </div>
+
+          {invoicesLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700"></div>
+            </div>
+          ) : pendingInvoices.length > 0 ? (
             <div className="space-y-3">
-              {pendingSettlements.map((settlement) => (
+              {pendingInvoices.map((invoice) => (
                 <div
-                  key={settlement.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  key={invoice.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <div>
                     <p className="font-medium text-gray-800">
-                      {settlement.amount}{" "}
+                      ${invoice.amount.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {invoice.customerName}
                     </p>
                   </div>
-                  <div className="flex items-center">
-                    <p className="text-xs text-gray-500">{settlement.date}</p>
+                  <div className="flex flex-col items-end">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        new Date(invoice.dueDate) < new Date()
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {new Date(invoice.dueDate) < new Date()
+                        ? "Overdue"
+                        : "Pending"}
+                    </span>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Due: {format(new Date(invoice.dueDate), "MMM dd")}
+                    </p>
                   </div>
                 </div>
               ))}
+              <Link
+                href="/invoices"
+                className="block text-center text-sm text-purple-600 hover:text-purple-800 mt-2 pt-2 border-t border-gray-100"
+              >
+                View all pending invoices
+              </Link>
             </div>
           ) : (
             <div className="text-center py-6 text-gray-500">
               <CheckCircle className="h-10 w-10 mx-auto mb-2 text-green-500 opacity-80" />
-              <p>No pending settlements</p>
+              <p>No pending payments</p>
+              <Link
+                href="/invoices/create"
+                className="text-sm text-purple-600 hover:text-purple-800 mt-2 inline-block"
+              >
+                Create new invoice
+              </Link>
             </div>
           )}
         </div>
 
-        {/* Recent Invoices - Remains in right column */}
+        {/* Recent Invoices */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-gray-900">Recent Invoices</h3>
-            <Link
-              href="/invoices"
-              className="text-sm text-purple-600 hover:text-purple-800"
-            >
-              View All
-            </Link>
+            <h3 className="font-medium text-gray-900">Recent Payments</h3>
+            {!invoicesLoading && recentInvoices.length > 0 && (
+              <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">
+                $
+                {recentInvoices
+                  .reduce((sum, inv) => sum + inv.amount, 0)
+                  .toFixed(2)}{" "}
+                received
+              </span>
+            )}
           </div>
-          <div className="space-y-3">
-            {recentInvoices.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div>
-                  <p className="font-medium text-gray-800">
-                    {transaction.amount}{" "}
-                  </p>
-                  <p className="text-xs text-gray-500">{transaction.date}</p>
-                </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-                  Paid
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {/* System Updates */}
-      <div className="mt-6 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <Bell className="h-5 w-5 text-blue-700" />
-          </div>
-          <div className="ml-3">
-            <h4 className="font-medium text-blue-900">System Updates</h4>
-            <p className="text-sm text-blue-800 mt-1">
-              Base Network is running smoothly. All systems operational.
-            </p>
-            <div className="mt-3 flex items-center">
-              <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-              <p className="text-xs text-blue-800">Last updated 5 mins ago</p>
+          {invoicesLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700"></div>
             </div>
-          </div>
-        </div>
-        <div className="mt-3 pt-3 border-t border-blue-200">
-          <p className="text-sm text-blue-800">
-            <span className="font-medium">Tip:</span> Boost loyalty by offering
-            special discounts to repeat customers!
-          </p>
+          ) : recentInvoices.length > 0 ? (
+            <div className="space-y-3">
+              {recentInvoices.map((invoice) => (
+                <div
+                  key={invoice.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      ${invoice.amount.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {invoice.customerName} •{" "}
+                      {invoice.paidAt
+                        ? format(new Date(invoice.paidAt), "MMM dd")
+                        : ""}
+                    </p>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                    Paid
+                  </span>
+                </div>
+              ))}
+              <Link
+                href="/invoices?status=paid"
+                className="block text-center text-sm text-purple-600 hover:text-purple-800 mt-2 pt-2 border-t border-gray-100"
+              >
+                View payment history
+              </Link>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-gray-500">
+              <p>No payment history yet</p>
+              <Link
+                href="/invoices/create"
+                className="text-sm text-purple-600 hover:text-purple-800 mt-2 inline-block"
+              >
+                Create your first invoice
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>
