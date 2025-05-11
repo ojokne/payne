@@ -4,6 +4,7 @@ export interface Invoice {
   customerName: string;
   amount: number;
   dueDate: Date;
+  paidAt?: Date;
   status: "paid" | "pending" | "overdue";
   paymentLink: string;
   merchantId: string;

@@ -49,25 +49,20 @@ export default function InvoicesPage() {
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          // Convert Firestore timestamp to Date object if necessary
-          const dueDate =
-            data.dueDate instanceof Date
-              ? data.dueDate
-              : data.dueDate?.toDate
-              ? data.dueDate.toDate()
-              : new Date(data.dueDate);
+         
 
           invoicesData.push({
             id: doc.id,
             invoiceNumber: data.invoiceNumber,
             customerName: data.customerName,
             amount: parseFloat(data.amount),
-            dueDate: dueDate,
+            dueDate: new Date(data.dueDate),
             status: data.status,
             paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
             merchantId: data.merchantId,
             merchantName: data.merchantName,
             merchantAddress: data.merchantAddress,
+            paidAt:data?.paidAt
           });
         });
 

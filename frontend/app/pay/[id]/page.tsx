@@ -64,20 +64,12 @@ export default function PaymentPage() {
         const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
 
-        // Convert Firestore timestamp to Date object if necessary
-        const dueDate =
-          data.dueDate instanceof Date
-            ? data.dueDate
-            : data.dueDate?.toDate
-            ? data.dueDate.toDate()
-            : new Date(data.dueDate);
-
         const invoiceData: Invoice = {
           id: docSnap.id,
           invoiceNumber: data.invoiceNumber,
           customerName: data.customerName,
           amount: parseFloat(data.amount) || 0,
-          dueDate: dueDate,
+          dueDate: new Date(data.dueDate),
           status: data.status || "pending",
           paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
           merchantId: data.merchantId,
