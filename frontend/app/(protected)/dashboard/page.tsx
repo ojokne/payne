@@ -444,7 +444,7 @@ export default function Dashboard() {
                 href="/invoices"
                 className="block text-center text-sm text-purple-600 hover:text-purple-800 mt-2 pt-2 border-t border-gray-100"
               >
-                View all pending invoices
+                View All
               </Link>
             </div>
           ) : (
@@ -504,10 +504,10 @@ export default function Dashboard() {
                 </div>
               ))}
               <Link
-                href="/invoices?status=paid"
+                href="/invoices"
                 className="block text-center text-sm text-purple-600 hover:text-purple-800 mt-2 pt-2 border-t border-gray-100"
               >
-                View payment history
+                View All
               </Link>
             </div>
           ) : (

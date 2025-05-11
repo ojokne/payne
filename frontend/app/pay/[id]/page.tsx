@@ -318,6 +318,15 @@ export default function PaymentPage() {
             <span className="font-bold px-1">{invoice.merchantName}</span>
             for invoice {invoice.invoiceNumber}.
           </p>
+
+          {txHash && (
+            <div className="mt-2 text-xs">
+              <span className="text-gray-500">Transaction ID: </span>
+              <span className="font-mono text-blue-700 break-all">
+                {txHash}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -333,6 +342,18 @@ export default function PaymentPage() {
           </span>
         </Link>
       </div>
+      {/*  confirmation status indicator */}
+      {isConfirming && (
+        <div className="max-w-md mx-auto mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
+          <div className="flex items-center text-blue-700">
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <span className="font-medium">Transaction submitted!</span>
+          </div>
+          <p className="mt-1 text-sm text-blue-600">
+            Waiting for blockchain confirmation. This may take a few moments.
+          </p>
+        </div>
+      )}
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6">
@@ -430,28 +451,6 @@ export default function PaymentPage() {
                   `Pay $${invoice?.amount}`
                 )}
               </button>
-
-              {/* Add confirmation status indicator */}
-              {isConfirming && (
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
-                  <div className="flex items-center text-blue-700">
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    <span className="font-medium">Transaction submitted!</span>
-                  </div>
-                  <p className="mt-1 text-sm text-blue-600">
-                    Waiting for blockchain confirmation. This may take a few
-                    moments.
-                  </p>
-                  {txHash && (
-                    <div className="mt-2 text-xs">
-                      <span className="text-gray-500">Transaction ID: </span>
-                      <span className="font-mono text-blue-700 break-all">
-                        {txHash}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>
