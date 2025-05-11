@@ -298,35 +298,116 @@ export default function PaymentPage() {
   // Show success state
   if (paymentSuccess) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="pb-3 flex items-center justify-center">
-          <Link href="/dashboard" className="flex items-center">
-            <span className="text-5xl py-1 font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col items-center justify-center p-4 print:bg-white print:p-0 print:items-start print:justify-start">
+        <div className="pb-4 flex items-center justify-center print:justify-start print:pl-4">
+          <Link href="/" className="flex items-center">
+            <span className="text-5xl py-1 font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 print:text-black print:bg-none print:text-3xl">
               Payne
             </span>
           </Link>
         </div>
-        <div className="bg-green-50 border border-green-100 rounded-lg p-8 max-w-md w-full text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-            <Check className="h-6 w-6 text-green-600" />
-          </div>
-          <h2 className="mt-4 text-xl font-semibold text-gray-900">
-            Payment Successful
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Thank you for your payment of ${invoice.amount.toFixed(2)} to
-            <span className="font-bold px-1">{invoice.merchantName}</span>
-            for invoice {invoice.invoiceNumber}.
-          </p>
 
-          {txHash && (
-            <div className="mt-2 text-xs">
-              <span className="text-gray-500">Transaction ID: </span>
-              <span className="font-mono text-blue-700 break-all">
-                {txHash}
-              </span>
+        <div className="bg-white border border-gray-100 rounded-2xl p-8 max-w-md w-full shadow-xl relative overflow-hidden print:shadow-none print:border-none print:rounded-none print:p-4 print:max-w-full">
+          {/* Decorative elements (hidden on print) */}
+          <div className="absolute -top-10 -right-10 w-24 h-24 bg-green-100 rounded-full opacity-50 no-print"></div>
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-100 rounded-full opacity-50 no-print"></div>
+
+          {/* Checkmark that works in print too */}
+          <div className="relative mb-8 flex justify-center print:static print:mb-4">
+            <div className="absolute animate-ping h-16 w-16 rounded-full bg-green-100 opacity-50 no-print"></div>
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-green-500 shadow-lg print:bg-green-600 print:shadow-none">
+              <Check className="h-8 w-8 text-white print:text-white" />
             </div>
-          )}
+          </div>
+
+          {/* Receipt content */}
+          <div className="relative z-10">
+            <h2 className="text-2xl font-bold text-gray-900 text-center mb-4 print:text-left">
+              Payment Complete!
+            </h2>
+
+            <div className="my-6 py-4 border-t border-b border-dashed border-gray-200 print:border-gray-400">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-gray-500">Amount Paid:</span>
+                <span className="text-xl font-bold text-gray-900">
+                  ${invoice.amount}
+                </span>
+              </div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-gray-500">Paid To:</span>
+                <span className="font-medium text-gray-900">
+                  {invoice.merchantName}
+                </span>
+              </div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-gray-500">Invoice Number:</span>
+                <span className="font-medium text-gray-900">
+                  {invoice.invoiceNumber}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Date:</span>
+                <span className="font-medium text-gray-900">
+                  {new Date().toDateString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Transaction details */}
+            {txHash && (
+              <div className="mb-6 bg-indigo-50 rounded-lg p-3 text-xs print:bg-transparent print:p-0 print:text-sm print:mb-2">
+                <div className="flex items-center mb-1">
+                  <svg
+                    className="h-4 w-4 text-indigo-500 mr-1 print:hidden"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <span className="font-medium text-indigo-700 print:text-black">
+                    Blockchain Verified
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 print:text-black">
+                    Transaction ID:{" "}
+                  </span>
+                  <span className="font-mono text-indigo-600 break-all print:text-black">
+                    {txHash}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Print button (hidden when printing) */}
+            <div className="flex flex-col space-y-3 no-print">
+              <button
+                onClick={() => window.print()}
+                className="w-full py-2.5 px-4 rounded-lg border border-gray-300 bg-white text-gray-700 text-center font-medium hover:bg-gray-50 transition-colors flex items-center justify-center"
+              >
+                <svg
+                  className="h-4 w-4 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                  />
+                </svg>
+                Save Receipt
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
