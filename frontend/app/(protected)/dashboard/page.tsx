@@ -27,6 +27,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { USDC_ADDRESS } from "@/constants/constants";
 import { erc20Abi } from "viem";
 import { onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const [showAmounts, setShowAmounts] = useState(false);
@@ -55,6 +56,8 @@ export default function Dashboard() {
       transactions: 2,
     },
   ];
+
+  const router = useRouter()
 
   // get address of connected wallet
   const { address } = useAccount();
@@ -253,7 +256,9 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <h2 className="text-lg font-medium text-gray-900 mb-3">Quick Actions</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 overflow-x-auto pb-2">
-        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer"
+        onClick={()=> router.push("/invoices/create")}
+        >
           <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
             <QrCode className="h-5 w-5 text-purple-600" />
           </div>
@@ -262,21 +267,21 @@ export default function Dashboard() {
           </span>
         </button>
 
-        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer">
           <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
             <ArrowUpRight className="h-5 w-5 text-purple-600" />
           </div>
           <span className="text-sm text-gray-700 text-center">Send Refund</span>
         </button>
 
-        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer">
           <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
             <CreditCard className="h-5 w-5 text-purple-600" />
           </div>
           <span className="text-sm text-gray-700 text-center">Invoices</span>
         </button>
 
-        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer">
           <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
             <BarChart2 className="h-5 w-5 text-purple-600" />
           </div>
