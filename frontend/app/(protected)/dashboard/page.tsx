@@ -401,20 +401,42 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        new Date(invoice.dueDate) < new Date()
-                          ? "bg-red-100 text-red-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {new Date(invoice.dueDate) < new Date()
-                        ? "Overdue"
-                        : "Pending"}
-                    </span>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Due: {format(new Date(invoice.dueDate), "MMM dd")}
-                    </p>
+                    {(() => {
+                      // Create today's date with time set to midnight for comparison
+                      const today = new Date();
+                      const todayWithoutTime = new Date(
+                        today.getFullYear(),
+                        today.getMonth(),
+                        today.getDate()
+                      );
+
+                      // Create a dueDate with only date components (no time)
+                      const dueDateWithoutTime = new Date(
+                        invoice.dueDate.getFullYear(),
+                        invoice.dueDate.getMonth(),
+                        invoice.dueDate.getDate()
+                      );
+
+                      // Compare dates without time components
+                      const isOverdue = dueDateWithoutTime < todayWithoutTime;
+
+                      return (
+                        <>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${
+                              isOverdue
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {isOverdue ? "Overdue" : "Pending"}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Due: {format(invoice.dueDate, "MMM dd")}
+                          </p>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
