@@ -137,7 +137,7 @@ export default function CreateInvoicePage() {
         invoiceNumber: generatedInvoiceNumber,
         customerName: formData.customerName,
         amount: parseFloat(formData.amount),
-        dueDate: new Date(formData.dueDate),
+        dueDate: new Date(formData.dueDate).toISOString(),
         createdAt: new Date().toISOString(),
         status: "pending",
         merchantId: auth.currentUser?.uid,
