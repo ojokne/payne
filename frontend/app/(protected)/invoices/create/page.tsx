@@ -234,7 +234,7 @@ export default function CreateInvoicePage() {
                 <input
                   type="text"
                   id="invoiceNumber"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 cursor-not-allowed"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 cursor-not-allowed focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                   value={generatedInvoiceNumber}
                   readOnly
                 />
@@ -259,7 +259,7 @@ export default function CreateInvoicePage() {
                   name="customerName"
                   className={`bg-white border ${
                     errors.customerName ? "border-red-300" : "border-gray-300"
-                  } text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-indigo-500 focus:border-indigo-500`}
+                  } text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition`}
                   value={formData.customerName}
                   onChange={handleChange}
                   placeholder="Customer or Company Name"
@@ -290,7 +290,7 @@ export default function CreateInvoicePage() {
                   name="amount"
                   className={`bg-white border ${
                     errors.amount ? "border-red-300" : "border-gray-300"
-                  } text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-indigo-500 focus:border-indigo-500`}
+                  } text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition`}
                   value={formData.amount}
                   onChange={handleChange}
                   placeholder="0.00"
@@ -319,7 +319,7 @@ export default function CreateInvoicePage() {
                   name="dueDate"
                   className={`bg-white border ${
                     errors.dueDate ? "border-red-300" : "border-gray-300"
-                  } text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-indigo-500 focus:border-indigo-500`}
+                  } text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition`}
                   value={formData.dueDate}
                   onChange={handleChange}
                   min={new Date().toISOString().split('T')[0]}
