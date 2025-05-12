@@ -11,3 +11,14 @@ export interface Invoice {
   merchantName: string;
   merchantAddress: `0x${string}`;
 }
+
+export interface Flag {
+  img: string;
+  emoji: string;
+  emoji_unicode: string;
+}
+
+export interface CurrencyData {
+  code: string;
+  flag: Flag | null;
+}

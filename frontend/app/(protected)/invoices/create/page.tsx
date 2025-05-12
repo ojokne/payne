@@ -25,17 +25,7 @@ import { useAccount } from "wagmi";
 import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
 import { convertToUsdc } from "@/utils";
 import Image from "next/image";
-
-interface Flag {
-  img: string;
-  emoji: string;
-  emoji_unicode: string;
-}
-
-interface CurrencyData {
-  code: string;
-  flag: Flag | null;
-}
+import { CurrencyData } from "@/types/types";
 
 export default function CreateInvoicePage() {
   const router = useRouter();
