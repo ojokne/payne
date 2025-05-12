@@ -50,7 +50,7 @@ export default function WhyUse() {
             <div className="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center mb-4">
               <Wallet className="w-7 h-7 text-purple-600" />
             </div>
-            <h3 font-heading className="font-heading text-xl font-semibold mb-2 text-gray-900">
+            <h3 className="font-heading text-xl font-semibold mb-2 text-gray-900">
               No Bank Account Needed
             </h3>
             <p className="text-gray-700">
