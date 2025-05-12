@@ -124,6 +124,7 @@ export default function Header() {
       try {
         // Check if exchange rates are already in session storage
         const storedRates = sessionStorage.getItem("exchangeRates");
+        const storedUsdcRate = sessionStorage.getItem("usdcRate");
         const storedTimestamp = sessionStorage.getItem(
           "exchangeRatesTimestamp"
         );
@@ -133,37 +134,69 @@ export default function Header() {
         const now = Date.now();
 
         // Use cached rates if available and not expired
-        if (storedRates && storedTimestamp) {
+        if (storedRates && storedUsdcRate && storedTimestamp) {
           const timestamp = parseInt(storedTimestamp);
           if (now - timestamp < CACHE_DURATION) {
-            console.log("Using cached exchange rates");
+            console.log("Using cached exchange rates and USDC rate");
             return;
           }
         }
 
-        // Fetch fresh rates from our own API route instead of directly using the external API
-        const response = await fetch("/api/exchange-rates");
+        // Fetch both exchange rates and USDC rate in parallel
+        const [exchangeRateResponse, usdcRateResponse] = await Promise.all([
+          // Regular exchange rates
+          fetch("/api/exchange-rates"),
 
-        if (!response.ok) {
-          throw new Error(`API error! Status: ${response.status}`);
+          // USDC to USD conversion rate
+          fetch(
+            "https://api.coingecko.com/api/v3/simple/price?ids=usd-coin&vs_currencies=usd"
+          ),
+        ]);
+
+        // Handle exchange rate response
+        if (!exchangeRateResponse.ok) {
+          throw new Error(
+            `Exchange rate API error! Status: ${exchangeRateResponse.status}`
+          );
         }
 
-        const data: ExchangeRateResponse = await response.json();
+        const exchangeRateData = await exchangeRateResponse.json();
 
-        if (data.result !== "success") {
-          throw new Error("API returned unsuccessful response");
+        if (exchangeRateData.result !== "success") {
+          throw new Error("Exchange rate API returned unsuccessful response");
         }
 
-        // Store in session storage with current timestamp
+        // Handle USDC rate response
+        if (!usdcRateResponse.ok) {
+          throw new Error(
+            `USDC rate API error! Status: ${usdcRateResponse.status}`
+          );
+        }
+
+        const usdcRateData = await usdcRateResponse.json();
+
+        if (!usdcRateData["usd-coin"] || !usdcRateData["usd-coin"].usd) {
+          throw new Error("Invalid USDC rate response format");
+        }
+
+        // Store exchange rates in session storage
         sessionStorage.setItem(
           "exchangeRates",
-          JSON.stringify(data.conversion_rates)
+          JSON.stringify(exchangeRateData.conversion_rates)
         );
+
+        // Store USDC rate in session storage
+        sessionStorage.setItem(
+          "usdcRate",
+          usdcRateData["usd-coin"].usd.toString()
+        );
+
+        // Common timestamp for both rates
         sessionStorage.setItem("exchangeRatesTimestamp", now.toString());
 
-        console.log("Exchange rates fetched and stored");
+        console.log("Exchange rates and USDC rate fetched and stored");
       } catch (error) {
-        console.error("Error fetching exchange rates:", error);
+        console.error("Error fetching rates:", error);
       }
     }
 
@@ -171,7 +204,7 @@ export default function Header() {
     if (typeof window !== "undefined") {
       fetchExchangeRates();
     }
-  }, [geoData.isLoading]);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-lg bg-white border-b border-gray-100 shadow-sm">
