@@ -311,20 +311,6 @@ export default function Dashboard() {
             )}
           </button>
         </div>
-        {/* <div className="mt-4 pt-4 border-t border-white/20 flex justify-between text-sm">
-          <div>
-            <p className="opacity-75">Last 7 days</p>
-            <p className="font-medium">
-              {showAmounts ? "650 USDC" : "•••• USDC"}
-            </p>
-          </div>
-          <div>
-            <p className="opacity-75">Last 30 days</p>
-            <p className="font-medium">
-              {showAmounts ? "2,430 USDC" : "•••• USDC"}
-            </p>
-          </div>
-        </div> */}
       </div>
 
       {/* Quick Actions */}
@@ -342,21 +328,20 @@ export default function Dashboard() {
           </span>
         </button>
 
-        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer">
-          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
-            <ArrowUpRight className="h-5 w-5 text-purple-600" />
-          </div>
-          <span className="text-sm text-gray-700 text-center">Send Refund</span>
-        </button>
-
-        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer">
+        <button
+          onClick={() => router.push("/invoices")}
+          className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer"
+        >
           <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
             <CreditCard className="h-5 w-5 text-purple-600" />
           </div>
           <span className="text-sm text-gray-700 text-center">Invoices</span>
         </button>
 
-        <button className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer">
+        <button
+          onClick={() => router.push("/analytics")}
+          className="flex flex-col items-center justify-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:cursor-pointer"
+        >
           <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
             <BarChart2 className="h-5 w-5 text-purple-600" />
           </div>
