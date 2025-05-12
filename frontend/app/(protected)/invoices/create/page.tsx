@@ -206,7 +206,6 @@ export default function CreateInvoicePage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        const storedCountryCode = sessionStorage.getItem("countryCode");
         const storedCountry = sessionStorage.getItem("country");
         const storedFlag = sessionStorage.getItem("countryFlag");
 
@@ -221,7 +220,6 @@ export default function CreateInvoicePage() {
             currencyCode = mappedCurrency;
           }
         }
-
 
         if (storedFlag) {
           setLocalCurrency({
@@ -242,6 +240,8 @@ export default function CreateInvoicePage() {
 
   // Add this toggle function
   const toggleCurrency = () => {
+    console.log(selectedCurrency);
+
     setSelectedCurrency((prev) =>
       prev === "USD" ? localCurrency.code : "USD"
     );
@@ -260,16 +260,38 @@ export default function CreateInvoicePage() {
       </div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Create New Invoice</h1>
-        {/* Currency toggle button */}
-        <button
-          onClick={toggleCurrency}
-          className="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-lg flex items-center"
-        >
-          <RefreshCw className="w-4 h-4 mr-1" />
-          {selectedCurrency === "USD"
-            ? `Switch to ${localCurrency.code}`
-            : `Switch to USD`}
-        </button>
+
+        {/* Enhanced currency selector */}
+        <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm p-0.5 ">
+          <button
+            onClick={() => setSelectedCurrency("USD")}
+            className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+              selectedCurrency === "USD"
+                ? "bg-indigo-600 text-white"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+            aria-current={selectedCurrency === "USD"}
+          >
+            <span className="mr-2">$</span>
+            <span>USD</span>
+          </button>
+
+          <button
+            onClick={() => setSelectedCurrency(localCurrency.code)}
+            className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ml-0.5 transition-colors hover:cursor-pointer ${
+              selectedCurrency !== "USD"
+                ? "bg-indigo-600 text-white"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+            aria-current={selectedCurrency !== "USD"}
+            disabled={localCurrency.code === "USD"}
+          >
+            {localCurrency.flag && (
+              <span className="mr-2">{localCurrency.flag.emoji}</span>
+            )}
+            <span>{localCurrency.code}</span>
+          </button>
+        </div>
       </div>
 
       {/* Status messages */}
