@@ -10,6 +10,7 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
+  RefreshCw,
 } from "lucide-react";
 import {
   collection,
@@ -21,11 +22,23 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/config/firebase";
 import { useAccount } from "wagmi";
+import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
+
+interface Flag {
+  img: string;
+  emoji: string;
+  emoji_unicode: string;
+}
+
+interface CurrencyData {
+  code: string;
+  flag: Flag | null;
+}
 
 export default function CreateInvoicePage() {
   const router = useRouter();
-    const { address } = useAccount();
-  
+  const { address } = useAccount();
+
   const [formData, setFormData] = useState({
     customerName: "",
     amount: "",
@@ -39,6 +52,13 @@ export default function CreateInvoicePage() {
     type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
+
+  // Currency state
+  const [localCurrency, setLocalCurrency] = useState<CurrencyData>({
+    code: "USD",
+    flag: null,
+  });
+  const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
 
   // Generate invoice number when component mounts
   useEffect(() => {
@@ -137,12 +157,13 @@ export default function CreateInvoicePage() {
         invoiceNumber: generatedInvoiceNumber,
         customerName: formData.customerName,
         amount: parseFloat(formData.amount),
+        currency: selectedCurrency, // Add the selected currency
         dueDate: new Date(formData.dueDate).toISOString(),
         createdAt: new Date().toISOString(),
         status: "pending",
         merchantId: auth.currentUser?.uid,
         merchantName: auth.currentUser?.displayName,
-        merchantAddress:address
+        merchantAddress: address,
       };
 
       // Save to Firebase
@@ -181,6 +202,51 @@ export default function CreateInvoicePage() {
     }
   };
 
+  // Add this useEffect to load the currency data from sessionStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedCountryCode = sessionStorage.getItem("countryCode");
+        const storedCountry = sessionStorage.getItem("country");
+        const storedFlag = sessionStorage.getItem("countryFlag");
+
+        let currencyCode = "USD"; // Default
+
+        // First try to get currency from country name
+        if (storedCountry) {
+          const mappedCurrency = (
+            countryCurrencyMapping as Record<string, string>
+          )[storedCountry];
+          if (mappedCurrency) {
+            currencyCode = mappedCurrency;
+          }
+        }
+
+
+        if (storedFlag) {
+          setLocalCurrency({
+            code: currencyCode,
+            flag: JSON.parse(storedFlag),
+          });
+
+          setSelectedCurrency(currencyCode);
+
+          // Store the currency code in session storage for later use
+          sessionStorage.setItem("countryCurrencyCode", currencyCode);
+        }
+      } catch (error) {
+        console.error("Error loading currency data:", error);
+      }
+    }
+  }, []);
+
+  // Add this toggle function
+  const toggleCurrency = () => {
+    setSelectedCurrency((prev) =>
+      prev === "USD" ? localCurrency.code : "USD"
+    );
+  };
+
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
       <div className="flex items-center  pb-4">
@@ -194,6 +260,16 @@ export default function CreateInvoicePage() {
       </div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Create New Invoice</h1>
+        {/* Currency toggle button */}
+        <button
+          onClick={toggleCurrency}
+          className="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-lg flex items-center"
+        >
+          <RefreshCw className="w-4 h-4 mr-1" />
+          {selectedCurrency === "USD"
+            ? `Switch to ${localCurrency.code}`
+            : `Switch to USD`}
+        </button>
       </div>
 
       {/* Status messages */}
@@ -272,17 +348,27 @@ export default function CreateInvoicePage() {
               )}
             </div>
 
-            {/* Amount */}
+            {/* Amount with Currency Toggle */}
             <div>
               <label
                 htmlFor="amount"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Amount ($)
+                Amount ({selectedCurrency})
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <DollarSign className="h-5 w-5 text-gray-400" />
+                  {selectedCurrency === "USD" ? (
+                    <DollarSign className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <div className="flex items-center space-x-1">
+                      {localCurrency.flag && (
+                        <span className="text-base text-gray-400">
+                          {localCurrency.flag.emoji}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <input
                   type="text"
@@ -322,7 +408,7 @@ export default function CreateInvoicePage() {
                   } text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition`}
                   value={formData.dueDate}
                   onChange={handleChange}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={new Date().toISOString().split("T")[0]}
                 />
               </div>
               {errors.dueDate && (
