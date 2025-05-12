@@ -36,7 +36,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       if (!user) {
-        router.push("/");
+        router.push("/login");
       }
     });
   }, []);
