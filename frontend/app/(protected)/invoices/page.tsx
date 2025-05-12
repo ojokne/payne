@@ -276,7 +276,7 @@ export default function InvoicesPage() {
               <tr>
                 <th className="px-6 py-3">Invoice ID</th>
                 <th className="px-6 py-3">Customer</th>
-                <th className="px-6 py-3">Amount</th>
+                <th className="px-6 py-3">Amount (USDC)</th>
                 <th className="px-6 py-3">Due Date</th>
                 <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3">Actions</th>
@@ -293,7 +293,7 @@ export default function InvoicesPage() {
                       {invoice.invoiceNumber}
                     </td>
                     <td className="px-6 py-4">{invoice.customerName}</td>
-                    <td className="px-6 py-4">${invoice.amount}</td>
+                    <td className="px-6 py-4">{invoice.amount.toFixed(6)}</td>
                     <td className="px-6 py-4">
                       {format(new Date(invoice.dueDate), "MMM dd, yyyy")}
                     </td>

@@ -51,7 +51,7 @@ export function convertToUsdc(amount: number, currencyCode: string): number | nu
   
   // Then apply the USDC rate (divide by USDC rate to get USDC amount)
   const usdcRate = getUsdcRate();
-  return usdAmount / usdcRate;
+  return (usdAmount / usdcRate);
 }
 
 // Convert from USDC to any currency

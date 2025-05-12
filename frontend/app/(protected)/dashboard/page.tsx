@@ -354,10 +354,11 @@ export default function Dashboard() {
         {/* Pending Settlements */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-gray-900">Pending Payments</h3>
+            <h3 className="font-medium text-gray-900">
+              Pending Payments (USDC)
+            </h3>
             {!invoicesLoading && pendingInvoices.length > 0 && (
               <span className="text-xs font-medium px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
-                $
                 {pendingInvoices
                   .reduce((sum, inv) => sum + inv.amount, 0)
                   .toFixed(2)}{" "}
@@ -379,7 +380,7 @@ export default function Dashboard() {
                 >
                   <div>
                     <p className="font-medium text-gray-800">
-                      ${invoice.amount.toFixed(2)}
+                      {invoice.amount.toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-500">
                       {invoice.customerName}
@@ -449,10 +450,10 @@ export default function Dashboard() {
         {/* Recent Invoices */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-gray-900">Recent Payments</h3>
+            <h3 className="font-medium text-gray-900">Recent Payments (USDC)</h3>
             {!invoicesLoading && recentInvoices.length > 0 && (
               <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">
-                $
+                
                 {recentInvoices
                   .reduce((sum, inv) => sum + inv.amount, 0)
                   .toFixed(2)}{" "}
@@ -474,7 +475,7 @@ export default function Dashboard() {
                 >
                   <div>
                     <p className="font-medium text-gray-800">
-                      ${invoice.amount.toFixed(2)}
+                      {invoice.amount.toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-500">
                       {invoice.customerName} •{" "}

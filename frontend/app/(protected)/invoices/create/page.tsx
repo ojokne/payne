@@ -161,8 +161,7 @@ export default function CreateInvoicePage() {
       const newInvoice = {
         invoiceNumber: generatedInvoiceNumber,
         customerName: formData.customerName,
-        amount: parseFloat(formData.amount),
-        currency: selectedCurrency, // Add the selected currency
+        amount: usdcEquivalent,
         dueDate: new Date(formData.dueDate).toISOString(),
         createdAt: new Date().toISOString(),
         status: "pending",
