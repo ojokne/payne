@@ -3,15 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   QrCode,
-  RefreshCcw,
-  ArrowUpRight,
-  RefreshCw,
-  Bell,
-  Clock,
   CheckCircle,
-  User,
-  DollarSign,
-  TrendingUp,
   Eye,
   EyeOff,
   BarChart2,
@@ -37,8 +29,11 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/config/firebase";
-import { Invoice } from "@/types/types";
+import { CurrencyData, Invoice } from "@/types/types";
 import { format } from "date-fns";
+import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
+import Image from "next/image";
+import { convertFromUsdc } from "@/utils";
 
 export default function Dashboard() {
   const [showAmounts, setShowAmounts] = useState(false);
@@ -47,6 +42,14 @@ export default function Dashboard() {
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
   const [pendingInvoices, setPendingInvoices] = useState<Invoice[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(true);
+
+  // Currency state
+  const [localCurrency, setLocalCurrency] = useState<CurrencyData>({
+    code: "USD",
+    flag: null,
+  });
+
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
 
   const router = useRouter();
 
@@ -103,6 +106,42 @@ export default function Dashboard() {
       setWalletType("eoa");
     }
   };
+
+  // load the currency data from sessionStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedCountry = sessionStorage.getItem("country");
+        const storedFlag = sessionStorage.getItem("countryFlag");
+
+        let currencyCode = "USD"; // Default
+
+        // First try to get currency from country name
+        if (storedCountry) {
+          const mappedCurrency = (
+            countryCurrencyMapping as Record<string, string>
+          )[storedCountry];
+          if (mappedCurrency) {
+            currencyCode = mappedCurrency;
+          }
+        }
+
+        if (storedFlag) {
+          setLocalCurrency({
+            code: currencyCode,
+            flag: JSON.parse(storedFlag),
+          });
+
+          setSelectedCurrency(currencyCode);
+
+          // Store the currency code in session storage for later use
+          sessionStorage.setItem("countryCurrencyCode", currencyCode);
+        }
+      } catch (error) {
+        console.error("Error loading currency data:", error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
@@ -223,12 +262,68 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto">
       {/* Welcome & Stats Overview */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          Welcome {name}
-        </h1>
-        <p className="text-gray-600">
-          Here's what's happening with your business
-        </p>
+        <div className="lg:flex lg:justify-between lg:items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              Welcome {name}
+            </h1>
+            <p className="text-gray-600">
+              Here's what's happening with your business
+            </p>
+          </div>
+          {/* Enhanced currency selector */}
+          <div
+            className="flex  w-3/4 mx-auto sm:w-auto sm:mx-0 lg:flex-row lg:items-center bg-white border border-gray-200 rounded shadow p-0.5 my-3"
+            //  className="flex w-3/4 mx-auto lg:flex lg:items-center bg-white border border-gray-200 rounded shadow p-0.5 my-6"
+          >
+            <button
+              onClick={() => setSelectedCurrency("USDC")}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                selectedCurrency === "USDC"
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+              aria-current={selectedCurrency === "USDC"}
+            >
+              <Image
+                src="https://www.cryptologos.cc/logos/usd-coin-usdc-logo.svg?v=040"
+                width={20}
+                height={20}
+                alt="USDC Logo"
+              />{" "}
+              <span className="ml-2">USDC</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedCurrency("USD")}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                selectedCurrency === "USD"
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+              aria-current={selectedCurrency === "USD"}
+            >
+              <span className="mr-2">$</span>
+              <span>USD</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedCurrency(localCurrency.code)}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ml-0.5 transition-colors hover:cursor-pointer ${
+                selectedCurrency === localCurrency.code
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+              aria-current={selectedCurrency === localCurrency.code}
+              disabled={selectedCurrency === localCurrency.code}
+            >
+              {localCurrency.flag && (
+                <span className="mr-2">{localCurrency.flag.emoji}</span>
+              )}
+              <span>{localCurrency.code}</span>
+            </button>
+          </div>
+        </div>
 
         <div className="mt-4 p-4 bg-white rounded-xl shadow">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -280,15 +375,43 @@ export default function Dashboard() {
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-5 mb-6 text-white shadow-md">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-purple-100 text-sm mb-1">Total USDC</p>
+            <p className="text-purple-100 text-sm mb-1">
+              Total {selectedCurrency}
+            </p>
             {showAmounts ? (
               <div>
-                <p className="text-3xl font-bold mb-1">{usdcBalance} USDC</p>
+                <p className="text-3xl font-bold mb-1">
+                  {/* USDC */}
+                  {selectedCurrency === "USDC" && (
+                    <span>{usdcBalance.toLocaleString("en-us")}</span>
+                  )}
+                  {/* USD */}
+                  {selectedCurrency === "USD" && (
+                    <span>
+                      {convertFromUsdc(usdcBalance, "USD")?.toLocaleString(
+                        "en-us"
+                      )}
+                    </span>
+                  )}
+                  {/* local currency */}
+                  {selectedCurrency === localCurrency.code && (
+                    <span>
+                      {convertFromUsdc(
+                        usdcBalance,
+                        localCurrency.code
+                      )?.toLocaleString("en-us")}
+                    </span>
+                  )}{" "}
+                  {/* currency code */}
+                  {selectedCurrency}
+                </p>
                 {/* <p className="text-sm opacity-80">≈ 1,250 USD</p> */}
               </div>
             ) : (
               <div>
-                <p className="text-3xl font-bold mb-1">•••• USDC</p>
+                <p className="text-3xl font-bold mb-1">
+                  •••• {selectedCurrency}
+                </p>
                 {/* <p className="text-sm opacity-80">•••• USD</p> */}
               </div>
             )}
@@ -450,10 +573,11 @@ export default function Dashboard() {
         {/* Recent Invoices */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-gray-900">Recent Payments (USDC)</h3>
+            <h3 className="font-medium text-gray-900">
+              Recent Payments (USDC)
+            </h3>
             {!invoicesLoading && recentInvoices.length > 0 && (
               <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">
-                
                 {recentInvoices
                   .reduce((sum, inv) => sum + inv.amount, 0)
                   .toFixed(2)}{" "}

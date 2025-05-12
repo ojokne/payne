@@ -196,7 +196,7 @@ export default function CreateInvoicePage() {
     }
   };
 
-  // Add this useEffect to load the currency data from sessionStorage
+  // load the currency data from sessionStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
@@ -232,14 +232,6 @@ export default function CreateInvoicePage() {
     }
   }, []);
 
-  // Add this toggle function
-  const toggleCurrency = () => {
-    console.log(selectedCurrency);
-
-    setSelectedCurrency((prev) =>
-      prev === "USD" ? localCurrency.code : "USD"
-    );
-  };
 
   // Calculate USDC equivalent whenever amount or currency changes
   useEffect(() => {
@@ -419,12 +411,7 @@ export default function CreateInvoicePage() {
                 !isNaN(parseFloat(formData.amount)) && (
                   <div className="mt-3 p-2.5 bg-blue-50 border border-blue-100 rounded-lg">
                     <div className="flex items-center">
-                      {/* USDC Icon */}
-                      {/* <div className="flex-shrink-0 w-8 h-8 mr-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-                        <span className="text-white font-bold text-xs">
-                          USDC
-                        </span>
-                      </div> */}
+                      {/* USDC logo */}
                       <Image
                         src="https://www.cryptologos.cc/logos/usd-coin-usdc-logo.svg?v=040"
                         width={50}
