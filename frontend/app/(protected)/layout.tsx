@@ -7,11 +7,8 @@ import {
   Home,
   BarChart2,
   CreditCard,
-  Settings,
-  Wallet,
   LogOut,
 } from "lucide-react";
-import Image from "next/image";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/config/firebase";
 
@@ -24,7 +21,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Invoices", href: "/invoices", icon: CreditCard },
     { name: "Analytics", href: "/analytics", icon: BarChart2 },
-    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   // Handle logout
@@ -88,20 +84,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             </div>
           </nav>
 
-          {/* Wallet info for desktop */}
-          {/* <div className="p-4 mx-4 mb-6 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
-            <div className="flex items-center mb-3">
-              <Wallet className="h-5 w-5 mr-2" />
-              <p className="text-sm font-medium">Smart Wallet</p>
-            </div>
-            <p className="text-xs opacity-90 font-mono mb-2 truncate">
-              0xabc3...5678
-            </p>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Balance:</span>
-              <span className="text-sm font-bold">1,250 USDC</span>
-            </div>
-          </div> */}
 
           {/* Logout button for desktop */}
           <button
@@ -137,7 +119,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile bottom navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white z-10 shadow-lg">
-        <div className="grid grid-cols-4 h-16">
+        <div className="grid grid-cols-3 h-16">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
