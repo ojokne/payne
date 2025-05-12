@@ -322,6 +322,7 @@ export default function CreateInvoicePage() {
                   } text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-indigo-500 focus:border-indigo-500`}
                   value={formData.dueDate}
                   onChange={handleChange}
+                  min={new Date().toISOString().split('T')[0]}
                 />
               </div>
               {errors.dueDate && (
