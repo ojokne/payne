@@ -18,6 +18,19 @@ interface IpWhoIsResponse {
   [key: string]: any; // For other properties we don't explicitly use
 }
 
+// Define interface for Exchange Rate API response
+interface ExchangeRateResponse {
+  result: string;
+  documentation: string;
+  terms_of_use: string;
+  time_last_update_unix: number;
+  time_last_update_utc: string;
+  time_next_update_unix: number;
+  time_next_update_utc: string;
+  base_code: string;
+  conversion_rates: Record<string, number>;
+}
+
 // Define interface for our stored geolocation data
 interface GeoData {
   flag: Flag | null;
@@ -85,6 +98,7 @@ export default function Header() {
         // Store data in session storage
         sessionStorage.setItem("countryFlag", JSON.stringify(data.flag));
         sessionStorage.setItem("countryCode", data.country_code);
+        sessionStorage.setItem("country", data.country); // Also store country name
 
         // Update state
         setGeoData({
@@ -103,6 +117,61 @@ export default function Header() {
       fetchGeoData();
     }
   }, []);
+
+  // New effect for exchange rate data - runs after geo data is loaded
+  useEffect(() => {
+    async function fetchExchangeRates() {
+      try {
+        // Check if exchange rates are already in session storage
+        const storedRates = sessionStorage.getItem("exchangeRates");
+        const storedTimestamp = sessionStorage.getItem(
+          "exchangeRatesTimestamp"
+        );
+
+        // Define cache duration (1 hour)
+        const CACHE_DURATION = 60 * 60 * 1000;
+        const now = Date.now();
+
+        // Use cached rates if available and not expired
+        if (storedRates && storedTimestamp) {
+          const timestamp = parseInt(storedTimestamp);
+          if (now - timestamp < CACHE_DURATION) {
+            console.log("Using cached exchange rates");
+            return;
+          }
+        }
+
+        // Fetch fresh rates from our own API route instead of directly using the external API
+        const response = await fetch("/api/exchange-rates");
+
+        if (!response.ok) {
+          throw new Error(`API error! Status: ${response.status}`);
+        }
+
+        const data: ExchangeRateResponse = await response.json();
+
+        if (data.result !== "success") {
+          throw new Error("API returned unsuccessful response");
+        }
+
+        // Store in session storage with current timestamp
+        sessionStorage.setItem(
+          "exchangeRates",
+          JSON.stringify(data.conversion_rates)
+        );
+        sessionStorage.setItem("exchangeRatesTimestamp", now.toString());
+
+        console.log("Exchange rates fetched and stored");
+      } catch (error) {
+        console.error("Error fetching exchange rates:", error);
+      }
+    }
+
+    // Only run in the browser
+    if (typeof window !== "undefined") {
+      fetchExchangeRates();
+    }
+  }, [geoData.isLoading]);
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-lg bg-white border-b border-gray-100 shadow-sm">
