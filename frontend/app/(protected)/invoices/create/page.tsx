@@ -23,6 +23,8 @@ import {
 import { auth, db } from "@/config/firebase";
 import { useAccount } from "wagmi";
 import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
+import { convertToUsdc } from "@/utils";
+import Image from "next/image";
 
 interface Flag {
   img: string;
@@ -59,6 +61,9 @@ export default function CreateInvoicePage() {
     flag: null,
   });
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
+
+  // USDC equivalent state
+  const [usdcEquivalent, setUsdcEquivalent] = useState<number | null>(null);
 
   // Generate invoice number when component mounts
   useEffect(() => {
@@ -247,6 +252,17 @@ export default function CreateInvoicePage() {
     );
   };
 
+  // Calculate USDC equivalent whenever amount or currency changes
+  useEffect(() => {
+    if (formData.amount && !isNaN(parseFloat(formData.amount))) {
+      const amount = parseFloat(formData.amount);
+      const usdcValue = convertToUsdc(amount, selectedCurrency);
+      setUsdcEquivalent(usdcValue);
+    } else {
+      setUsdcEquivalent(null);
+    }
+  }, [formData.amount, selectedCurrency]);
+
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
       <div className="flex items-center  pb-4">
@@ -407,6 +423,48 @@ export default function CreateInvoicePage() {
               {errors.amount && (
                 <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
               )}
+
+              {/* USDC Equivalent Display - Improved UI */}
+              {!errors.amount &&
+                formData.amount &&
+                !isNaN(parseFloat(formData.amount)) && (
+                  <div className="mt-3 p-2.5 bg-blue-50 border border-blue-100 rounded-lg">
+                    <div className="flex items-center">
+                      {/* USDC Icon */}
+                      {/* <div className="flex-shrink-0 w-8 h-8 mr-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+                        <span className="text-white font-bold text-xs">
+                          USDC
+                        </span>
+                      </div> */}
+                      <Image
+                        src="https://www.cryptologos.cc/logos/usd-coin-usdc-logo.svg?v=040"
+                        width={50}
+                        height={50}
+                        alt="USDC Logo"
+                      />
+
+                      {/* USDC Amount Info */}
+                      <div className="flex-grow ms-3">
+                        <p className="text-xs font-medium text-gray-500">
+                          You'll receive approximately
+                        </p>
+                        {usdcEquivalent !== null ? (
+                          <p className="text-sm font-semibold text-gray-800">
+                            {usdcEquivalent.toFixed(6)}{" "}
+                            <span className="text-indigo-600">USDC</span>
+                          </p>
+                        ) : (
+                          <div className="flex items-center">
+                            <div className="w-4 h-4 border-2 border-t-indigo-500 border-r-indigo-500 border-b-transparent border-l-transparent animate-spin rounded-full mr-2"></div>
+                            <span className="text-gray-500 text-sm">
+                              Calculating...
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
             </div>
 
             {/* Due Date */}
@@ -475,6 +533,10 @@ export default function CreateInvoicePage() {
             </button>
           </div>
         </form>
+        <div className="mb-2 mx-3 w-48 p-2 bg-white  text-xs text-gray-600 ">
+          USDC is a stablecoin pegged to the US dollar. This is the crypto
+          amount you'll receive when the invoice is paid.
+        </div>
       </div>
     </div>
   );
