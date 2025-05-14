@@ -156,86 +156,103 @@ export default function Dashboard() {
   useEffect(() => {
     setInvoicesLoading(true);
 
-    // Query for paid invoices (most recent first)
-    const paidInvoicesRef = collection(db, "invoices");
-    const paidQuery = query(
-      paidInvoicesRef,
-      where("status", "==", "paid"),
-      orderBy("paidAt", "desc"),
-      limit(3)
-    );
+    // Initialize as undefined
+    let paidUnsubscribe: (() => void) ;
+    let pendingUnsubscribe: (() => void) ;
 
-    // Query for pending invoices
-    const pendingInvoicesRef = collection(db, "invoices");
-    const pendingQuery = query(
-      pendingInvoicesRef,
-      where("status", "==", "pending"),
-      orderBy("dueDate", "asc"), // Earliest due first
-      limit(5)
-    );
+    // Store the auth unsubscribe function
+    const authUnsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Query for paid invoices (most recent first)
+        const paidInvoicesRef = collection(db, "invoices");
+        const paidQuery = query(
+          paidInvoicesRef,
+          where("merchantId", "==", user.uid),
+          where("status", "==", "paid"),
+          orderBy("paidAt", "desc"),
+          limit(3)
+        );
 
-    // Set up real-time listeners
-    const paidUnsubscribe = onSnapshot(paidQuery, (snapshot) => {
-      const invoices: Invoice[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+        // Query for pending invoices
+        const pendingInvoicesRef = collection(db, "invoices");
+        const pendingQuery = query(
+          pendingInvoicesRef,
+          where("merchantId", "==", user.uid),
+          where("status", "==", "pending"),
+          orderBy("dueDate", "asc"),
+          limit(5)
+        );
 
-        invoices.push({
-          id: doc.id,
-          invoiceNumber: data.invoiceNumber,
-          customerName: data.customerName,
-          amount: parseFloat(data.amount),
-          dueDate: new Date(data.dueDate),
-          status: data.status,
-          paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
-          merchantId: data.merchantId,
-          merchantName: data.merchantName,
-          merchantAddress: data.merchantAddress,
-          paidAt: new Date(data?.paidAt),
+        // Set up real-time listeners
+        paidUnsubscribe = onSnapshot(paidQuery, (snapshot) => {
+          const invoices: Invoice[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+
+            invoices.push({
+              id: doc.id,
+              invoiceNumber: data.invoiceNumber,
+              customerName: data.customerName,
+              amount: parseFloat(data.amount),
+              dueDate: new Date(data.dueDate),
+              status: data.status,
+              paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
+              merchantId: data.merchantId,
+              merchantName: data.merchantName,
+              merchantAddress: data.merchantAddress,
+              paidAt: new Date(data?.paidAt),
+            });
+          });
+
+          setRecentInvoices(invoices);
         });
-      });
 
-      setRecentInvoices(invoices);
+        pendingUnsubscribe = onSnapshot(pendingQuery, (snapshot) => {
+          const invoices: Invoice[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+
+            // Convert timestamp to Date if needed
+            const dueDate =
+              data.dueDate instanceof Date
+                ? data.dueDate
+                : data.dueDate?.toDate
+                ? data.dueDate.toDate()
+                : new Date(data.dueDate);
+
+            invoices.push({
+              id: doc.id,
+              invoiceNumber: data.invoiceNumber,
+              customerName: data.customerName,
+              amount: parseFloat(data.amount),
+              dueDate: dueDate,
+              status: data.status,
+              paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
+              merchantId: data.merchantId,
+              merchantName: data.merchantName,
+              merchantAddress: data.merchantAddress,
+              paidAt: data?.paidAt,
+            });
+          });
+
+          setPendingInvoices(invoices);
+          setInvoicesLoading(false);
+        });
+      } else {
+        router.push("/login");
+      }
     });
 
-    const pendingUnsubscribe = onSnapshot(pendingQuery, (snapshot) => {
-      const invoices: Invoice[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-
-        // Convert timestamp to Date if needed
-        const dueDate =
-          data.dueDate instanceof Date
-            ? data.dueDate
-            : data.dueDate?.toDate
-            ? data.dueDate.toDate()
-            : new Date(data.dueDate);
-
-        invoices.push({
-          id: doc.id,
-          invoiceNumber: data.invoiceNumber,
-          customerName: data.customerName,
-          amount: parseFloat(data.amount),
-          dueDate: dueDate,
-          status: data.status,
-          paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
-          merchantId: data.merchantId,
-          merchantName: data.merchantName,
-          merchantAddress: data.merchantAddress,
-          paidAt: data?.paidAt,
-        });
-      });
-
-      setPendingInvoices(invoices);
-      setInvoicesLoading(false);
-    });
-
-    // Cleanup
+    // Cleanup function
     return () => {
-      paidUnsubscribe();
-      pendingUnsubscribe();
+      // Unsubscribe from auth state listener
+      authUnsubscribe();
+
+      // Safely unsubscribe from Firestore listeners
+      if (typeof paidUnsubscribe === "function") paidUnsubscribe();
+      if (typeof pendingUnsubscribe === "function") pendingUnsubscribe();
     };
-  }, [address]); // Re-run when wallet address changes
+  }, []); 
 
   if (!address) {
     return (
@@ -480,7 +497,9 @@ export default function Dashboard() {
                 <span className="pe-2">{selectedCurrency} </span>
                 {selectedCurrency === "USDC" ? (
                   <>
-                    {pendingInvoices.reduce((sum, inv) => sum + inv.amount, 0).toFixed(3)}
+                    {pendingInvoices
+                      .reduce((sum, inv) => sum + inv.amount, 0)
+                      .toFixed(3)}
                   </>
                 ) : (
                   <>
@@ -594,7 +613,9 @@ export default function Dashboard() {
                 <span className="pe-2">{selectedCurrency} </span>
                 {selectedCurrency === "USDC" ? (
                   <>
-                    {recentInvoices.reduce((sum, inv) => sum + inv.amount, 0).toFixed(3)}
+                    {recentInvoices
+                      .reduce((sum, inv) => sum + inv.amount, 0)
+                      .toFixed(3)}
                   </>
                 ) : (
                   <>

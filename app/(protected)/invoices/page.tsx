@@ -12,13 +12,18 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { format } from "date-fns";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import Link from "next/link";
 import { Invoice } from "@/types/types";
 import QRCodeModal from "@/components/common/qr-code-modal";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/config/firebase";
+import { useRouter } from "next/navigation";
 
 export default function InvoicesPage() {
+  const router = useRouter();
+
   // State for filters
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -37,56 +42,70 @@ export default function InvoicesPage() {
   useEffect(() => {
     setIsLoading(true);
 
-    // Create a reference to the invoices collection
-    const invoicesRef = collection(db, "invoices");
-    const q = query(invoicesRef);
-
-    // Set up the real-time listener
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const invoicesData: Invoice[] = [];
-
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          
-          const rawDueDate = new Date(data.dueDate);
-
-          // Create a date with only year, month, day components
-          const dueDate = new Date(
-            rawDueDate.getFullYear(),
-            rawDueDate.getMonth(),
-            rawDueDate.getDate()
-          );
-
-          invoicesData.push({
-            id: doc.id,
-            invoiceNumber: data.invoiceNumber,
-            customerName: data.customerName,
-            amount: parseFloat(data.amount),
-            dueDate: dueDate,
-            status: data.status,
-            paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
-            merchantId: data.merchantId,
-            merchantName: data.merchantName,
-            merchantAddress: data.merchantAddress,
-            paidAt: data?.paidAt,
-          });
-        });
-
-        setInvoices(invoicesData);
-        setIsLoading(false);
-      },
-      (error) => {
-        console.error("Error listening to invoices:", error);
-        setError("Failed to load invoices. Please try again later.");
-        setIsLoading(false);
+    // Get the current authenticated user first
+    const authUnsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // User not logged in, redirect to login page
+        router.push("/login");
+        return;
       }
-    );
 
-    // Clean up the listener when the component unmounts
-    return () => unsubscribe();
-  }, []);
+      // Now we have the user ID, create a query filtered by merchantId
+      const invoicesRef = collection(db, "invoices");
+      const q = query(invoicesRef, where("merchantId", "==", user.uid));
+
+      // Set up the real-time listener on the filtered query
+      const invoiceUnsubscribe = onSnapshot(
+        q,
+        (querySnapshot) => {
+          const invoicesData: Invoice[] = [];
+
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+
+            const rawDueDate = new Date(data.dueDate);
+
+            // Create a date with only year, month, day components
+            const dueDate = new Date(
+              rawDueDate.getFullYear(),
+              rawDueDate.getMonth(),
+              rawDueDate.getDate()
+            );
+
+            invoicesData.push({
+              id: doc.id,
+              invoiceNumber: data.invoiceNumber,
+              customerName: data.customerName,
+              amount: parseFloat(data.amount),
+              dueDate: dueDate,
+              status: data.status,
+              paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
+              merchantId: data.merchantId,
+              merchantName: data.merchantName,
+              merchantAddress: data.merchantAddress,
+              paidAt: data?.paidAt,
+            });
+          });
+
+          setInvoices(invoicesData);
+          setIsLoading(false);
+        },
+        (error) => {
+          console.error("Error listening to invoices:", error);
+          setError("Failed to load invoices. Please try again later.");
+          setIsLoading(false);
+        }
+      );
+
+      // Return cleanup function that unsubscribes from both listeners
+      return () => {
+        invoiceUnsubscribe();
+        authUnsubscribe();
+      };
+    });
+
+    // The dependency array can remain empty if router doesn't need to be a dependency
+  }, [router]);
 
   // Filter invoices based on search, date and status
   const filteredInvoices = invoices.filter((invoice) => {
