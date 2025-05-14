@@ -10,7 +10,6 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
-  RefreshCw,
 } from "lucide-react";
 import {
   collection,
@@ -56,10 +55,6 @@ export default function CreateInvoicePage() {
   // USDC equivalent state
   const [usdcEquivalent, setUsdcEquivalent] = useState<number | null>(null);
 
-  // Generate invoice number when component mounts
-  useEffect(() => {
-    generateInvoiceNumber();
-  }, []);
 
   // Function to generate a unique invoice number
   const generateInvoiceNumber = async () => {
@@ -197,42 +192,12 @@ export default function CreateInvoicePage() {
     }
   };
 
-  // load the currency data from sessionStorage
+    // Generate invoice number when component mounts
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const storedCountry = sessionStorage.getItem("country");
-        const storedFlag = sessionStorage.getItem("countryFlag");
-
-        let currencyCode = "USD"; // Default
-
-        // First try to get currency from country name
-        if (storedCountry) {
-          const mappedCurrency = (
-            countryCurrencyMapping as Record<string, string>
-          )[storedCountry];
-          if (mappedCurrency) {
-            currencyCode = mappedCurrency;
-          }
-        }
-
-        if (storedFlag) {
-          setLocalCurrency({
-            code: currencyCode,
-            flag: JSON.parse(storedFlag),
-          });
-
-          setSelectedCurrency(currencyCode);
-
-          // Store the currency code in session storage for later use
-          sessionStorage.setItem("countryCurrencyCode", currencyCode);
-        }
-      } catch (error) {
-        console.error("Error loading currency data:", error);
-      }
-    }
+    generateInvoiceNumber();
   }, []);
 
+  
   // Calculate USDC equivalent whenever amount or currency changes
   useEffect(() => {
     if (formData.amount && !isNaN(parseFloat(formData.amount))) {
