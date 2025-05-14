@@ -16,7 +16,6 @@ import Link from "next/link";
 import { auth } from "@/config/firebase";
 import { useAccount, useDisconnect, usePublicClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { USDC_ADDRESS } from "@/constants/constants";
 import { erc20Abi } from "viem";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -88,7 +87,7 @@ export default function Dashboard() {
     });
 
     const balance = await publicClient?.readContract({
-      address: USDC_ADDRESS,
+      address: process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}`,
       abi: erc20Abi,
       functionName: "balanceOf",
       args: [address],
@@ -383,14 +382,12 @@ export default function Dashboard() {
                 <p className="text-3xl font-bold mb-1">
                   {/* USDC */}
                   {selectedCurrency === "USDC" && (
-                    <span>{usdcBalance.toLocaleString("en-us")}</span>
+                    <span>{usdcBalance.toFixed(3)}</span>
                   )}
                   {/* USD */}
                   {selectedCurrency === "USD" && (
                     <span>
-                      {convertFromUsdc(usdcBalance, "USD")?.toLocaleString(
-                        "en-us"
-                      )}
+                      {convertFromUsdc(usdcBalance, "USD")?.toFixed(3)}
                     </span>
                   )}
                   {/* local currency */}
@@ -399,7 +396,7 @@ export default function Dashboard() {
                       {convertFromUsdc(
                         usdcBalance,
                         localCurrency.code
-                      )?.toLocaleString("en-us")}
+                      )?.toFixed(3)}
                     </span>
                   )}{" "}
                   {/* currency code */}
@@ -482,13 +479,15 @@ export default function Dashboard() {
               <span className="text-xs font-medium px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
                 <span className="pe-2">{selectedCurrency} </span>
                 {selectedCurrency === "USDC" ? (
-                  <>{usdcBalance}</>
+                  <>
+                    {pendingInvoices.reduce((sum, inv) => sum + inv.amount, 0).toFixed(3)}
+                  </>
                 ) : (
                   <>
                     {convertFromUsdc(
                       pendingInvoices.reduce((sum, inv) => sum + inv.amount, 0),
                       selectedCurrency
-                    )?.toLocaleString("en-us")}
+                    )?.toFixed(3)}
                   </>
                 )}
                 <span className="ps-2">due</span>
@@ -511,13 +510,13 @@ export default function Dashboard() {
                     <p className="font-medium text-gray-800">
                       {selectedCurrency}{" "}
                       {selectedCurrency === "USDC" ? (
-                        <>{usdcBalance}</>
+                        <>{invoice.amount.toFixed(3)}</>
                       ) : (
                         <>
                           {convertFromUsdc(
                             invoice.amount,
                             selectedCurrency
-                          )?.toLocaleString("en-us")}
+                          )?.toFixed(3)}
                         </>
                       )}
                     </p>
@@ -594,13 +593,15 @@ export default function Dashboard() {
               <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">
                 <span className="pe-2">{selectedCurrency} </span>
                 {selectedCurrency === "USDC" ? (
-                  <>{usdcBalance}</>
+                  <>
+                    {recentInvoices.reduce((sum, inv) => sum + inv.amount, 0).toFixed(3)}
+                  </>
                 ) : (
                   <>
                     {convertFromUsdc(
                       recentInvoices.reduce((sum, inv) => sum + inv.amount, 0),
                       selectedCurrency
-                    )?.toLocaleString("en-us")}
+                    )?.toFixed(3)}
                   </>
                 )}
                 <span className="ps-2">received</span>
@@ -623,13 +624,13 @@ export default function Dashboard() {
                     <p className="font-medium text-gray-800">
                       {selectedCurrency}{" "}
                       {selectedCurrency === "USDC" ? (
-                        <>{usdcBalance}</>
+                        <>{invoice.amount.toFixed(3)}</>
                       ) : (
                         <>
                           {convertFromUsdc(
                             invoice.amount,
                             selectedCurrency
-                          )?.toLocaleString("en-us")}
+                          )?.toFixed(3)}
                         </>
                       )}{" "}
                     </p>

@@ -10,7 +10,7 @@ import {
   DisclaimerComponent,
   RainbowKitProvider,
 } from "@rainbow-me/rainbowkit";
-import { baseSepolia } from "wagmi/chains";
+import { base, baseSepolia } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
 import {
@@ -50,7 +50,7 @@ const config = createConfig({
   chains: [baseSepolia],
   connectors,
   transports: {
-    [baseSepolia.id]: http("https://sepolia.base.org"), // ✅ Base Sepolia RPC
+    [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_RPC), 
   },
 });
 
