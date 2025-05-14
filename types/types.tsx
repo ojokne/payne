@@ -21,3 +21,18 @@ export interface CurrencyData {
   code: string;
   flag: Flag | null;
 }
+
+export interface GeoData {
+  flag: Flag | null;
+  countryCode: string;
+  isLoading: boolean;
+}
+
+export interface IpApiResponse {
+  status: string;
+  country: string;
+  countryCode: string;
+  currency: string;
+  query: string;
+}
+
