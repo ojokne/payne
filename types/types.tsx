@@ -15,7 +15,6 @@ export interface Invoice {
 export interface Flag {
   img: string;
   emoji: string;
-  emoji_unicode: string;
 }
 
 export interface CurrencyData {
