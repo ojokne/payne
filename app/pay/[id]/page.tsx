@@ -16,8 +16,10 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/config/firebase";
-import { Invoice } from "@/types/types";
+import { CurrencyData, Flag, Invoice } from "@/types/types";
 import { waitForTransactionReceipt } from "wagmi/actions";
+import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
+import { convertFromUsdc } from "@/utils";
 
 export default function PaymentPage() {
   const params = useParams();
@@ -34,6 +36,16 @@ export default function PaymentPage() {
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null); // To store transaction hash
 
+  // Currency state
+  const [localCurrency, setLocalCurrency] = useState<CurrencyData>({
+    code: "USD",
+    flag: null,
+  });
+
+  const [flag, setFlag] = useState<Flag>({
+    emoji: "",
+    img: "",
+  });
   // Wallet connection
   const { address, isConnected } = useAccount();
   const { data: balance } = useBalance({
@@ -87,6 +99,41 @@ export default function PaymentPage() {
 
     fetchInvoiceDetails();
   }, [invoiceId]);
+
+  // load the currency data from sessionStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedCountry = sessionStorage.getItem("country");
+        const storedFlag = sessionStorage.getItem("countryFlag");
+
+        let currencyCode = "USD"; // Default
+
+        // First try to get currency from country name
+        if (storedCountry) {
+          const mappedCurrency = (
+            countryCurrencyMapping as Record<string, string>
+          )[storedCountry];
+          if (mappedCurrency) {
+            currencyCode = mappedCurrency;
+          }
+        }
+
+        if (storedFlag) {
+          setLocalCurrency({
+            code: currencyCode,
+            flag: JSON.parse(storedFlag),
+          });
+
+          setFlag(JSON.parse(storedFlag));
+          // Store the currency code in session storage for later use
+          sessionStorage.setItem("countryCurrencyCode", currencyCode);
+        }
+      } catch (error) {
+        console.error("Error loading currency data:", error);
+      }
+    }
+  }, []);
 
   // Function to send USDC payment
   function sendUSDC() {
@@ -640,11 +687,24 @@ export default function PaymentPage() {
             <span className="text-sm font-medium text-gray-500">
               Amount Due
             </span>
-            <div>
-              <span className="pr-1">USDC</span>
-              <span className="text-lg font-bold text-gray-900">
-                {invoice.amount.toFixed(3)}
-              </span>
+            <div className="flex flex-col items-end">
+              <div>
+                <span className="pr-1">USDC</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {invoice.amount.toFixed(3)}
+                </span>
+              </div>
+
+              <div>
+                <span className="pr-1">{flag.emoji}</span>
+
+                <span className="pr-1">{localCurrency.code}</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {convertFromUsdc(invoice.amount, localCurrency.code)?.toFixed(
+                    3
+                  )}
+                </span>
+              </div>
             </div>
           </div>
         </div>
