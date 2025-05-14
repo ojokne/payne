@@ -83,7 +83,7 @@ export default function Header() {
         }
 
         // Otherwise, fetch fresh data
-        const response = await fetch("http://ipwho.is/");
+        const response = await fetch("https://ipwhois.io/");
 
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
