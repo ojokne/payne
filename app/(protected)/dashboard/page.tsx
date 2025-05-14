@@ -382,7 +382,7 @@ export default function Dashboard() {
                 <p className="text-3xl font-bold mb-1">
                   {/* USDC */}
                   {selectedCurrency === "USDC" && (
-                    <span>{usdcBalance.toFixed(3)}</span>
+                    <span>{usdcBalance?.toFixed(3)}</span>
                   )}
                   {/* USD */}
                   {selectedCurrency === "USD" && (
