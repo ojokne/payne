@@ -16,10 +16,9 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/config/firebase";
-import { CurrencyData, Flag, Invoice } from "@/types/types";
+import {  Invoice, IpApiResponse } from "@/types/types";
 import { waitForTransactionReceipt } from "wagmi/actions";
-import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
-import { convertFromUsdc } from "@/utils";
+import countryToFlagEmoji from "@/constants/countryFlags";
 
 export default function PaymentPage() {
   const params = useParams();
@@ -36,104 +35,18 @@ export default function PaymentPage() {
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null); // To store transaction hash
 
-  // Currency state
-  const [localCurrency, setLocalCurrency] = useState<CurrencyData>({
-    code: "USD",
-    flag: null,
-  });
+  const [flag, setFlag] = useState("");
+  const [code, setCode] = useState("");
 
-  const [flag, setFlag] = useState<Flag>({
-    emoji: "",
-    img: "",
-  });
+  const [usdcToUsd, setUsdcToUsd] = useState(1);
+
+  const [usdToLocal, setUsdToLocal] = useState(1);
+
   // Wallet connection
   const { address, isConnected } = useAccount();
   const { data: balance } = useBalance({
     address,
   });
-
-  // Fetch invoice details from Firestore
-  useEffect(() => {
-    async function fetchInvoiceDetails() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Create a query against the invoices collection
-        const invoicesRef = collection(db, "invoices");
-        const q = query(invoicesRef, where("invoiceNumber", "==", invoiceId));
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-          // No matching documents
-          setError("Invoice not found. Please check the URL and try again.");
-          setLoading(false);
-          return;
-        }
-
-        // Use the first matching document (should be only one if invoiceNumber is unique)
-        const docSnap = querySnapshot.docs[0];
-        const data = docSnap.data();
-
-        const invoiceData: Invoice = {
-          id: docSnap.id,
-          invoiceNumber: data.invoiceNumber,
-          customerName: data.customerName,
-          amount: parseFloat(data.amount) || 0,
-          dueDate: new Date(data.dueDate),
-          status: data.status || "pending",
-          paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
-          merchantId: data.merchantId,
-          merchantName: data.merchantName,
-          merchantAddress: data.merchantAddress,
-        };
-
-        setInvoice(invoiceData);
-      } catch (err) {
-        console.error("Failed to fetch invoice:", err);
-        setError("Failed to load invoice details. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchInvoiceDetails();
-  }, [invoiceId]);
-
-  // load the currency data from sessionStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const storedCountry = sessionStorage.getItem("country");
-        const storedFlag = sessionStorage.getItem("countryFlag");
-
-        let currencyCode = "USD"; // Default
-
-        // First try to get currency from country name
-        if (storedCountry) {
-          const mappedCurrency = (
-            countryCurrencyMapping as Record<string, string>
-          )[storedCountry];
-          if (mappedCurrency) {
-            currencyCode = mappedCurrency;
-          }
-        }
-
-        if (storedFlag) {
-          setLocalCurrency({
-            code: currencyCode,
-            flag: JSON.parse(storedFlag),
-          });
-
-          setFlag(JSON.parse(storedFlag));
-          // Store the currency code in session storage for later use
-          sessionStorage.setItem("countryCurrencyCode", currencyCode);
-        }
-      } catch (error) {
-        console.error("Error loading currency data:", error);
-      }
-    }
-  }, []);
 
   // Function to send USDC payment
   function sendUSDC() {
@@ -263,6 +176,126 @@ export default function PaymentPage() {
       }
     );
   }
+  // Fetch invoice details from Firestore
+  useEffect(() => {
+    async function fetchInvoiceDetails() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Create a query against the invoices collection
+        const invoicesRef = collection(db, "invoices");
+        const q = query(invoicesRef, where("invoiceNumber", "==", invoiceId));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          // No matching documents
+          setError("Invoice not found. Please check the URL and try again.");
+          setLoading(false);
+          return;
+        }
+
+        // Use the first matching document (should be only one if invoiceNumber is unique)
+        const docSnap = querySnapshot.docs[0];
+        const data = docSnap.data();
+
+        const invoiceData: Invoice = {
+          id: docSnap.id,
+          invoiceNumber: data.invoiceNumber,
+          customerName: data.customerName,
+          amount: parseFloat(data.amount) || 0,
+          dueDate: new Date(data.dueDate),
+          status: data.status || "pending",
+          paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
+          merchantId: data.merchantId,
+          merchantName: data.merchantName,
+          merchantAddress: data.merchantAddress,
+        };
+
+        setInvoice(invoiceData);
+      } catch (err) {
+        console.error("Failed to fetch invoice:", err);
+        setError("Failed to load invoice details. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchInvoiceDetails();
+  }, [invoiceId]);
+
+  // fetch  data
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch("/api/geo-location");
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const apiData: IpApiResponse = await response.json();
+
+        if (apiData.status !== "success") {
+          throw new Error("API returned unsuccessful response");
+        }
+
+        const flagEmoji = countryToFlagEmoji[apiData.countryCode] || "🌐";
+
+        setCode(apiData.currency);
+
+        setFlag(flagEmoji);
+
+
+        const [exchangeRateResponse, usdcRateResponse] = await Promise.all([
+          fetch("/api/exchange-rates"),
+
+          // USDC to USD conversion rate
+          fetch(
+            "https://api.coingecko.com/api/v3/simple/price?ids=usd-coin&vs_currencies=usd"
+          ),
+        ]);
+
+        if (!exchangeRateResponse.ok) {
+          throw new Error(
+            `Exchange rate API error! Status: ${exchangeRateResponse.status}`
+          );
+        }
+
+        if (!usdcRateResponse.ok) {
+          throw new Error(
+            `USDC rate API error! Status: ${usdcRateResponse.status}`
+          );
+        }
+
+        const exchangeRateData = await exchangeRateResponse.json();
+        const usdcRateData = await usdcRateResponse.json();
+
+        if (exchangeRateData.result !== "success") {
+          throw new Error("Exchange rate API returned unsuccessful response");
+        }
+
+        if (!usdcRateData["usd-coin"] || !usdcRateData["usd-coin"].usd) {
+          throw new Error("Invalid USDC rate response format");
+        }
+
+        const usdcToUsdRate = usdcRateData["usd-coin"].usd;
+        const usdToLocalRate =
+          exchangeRateData.conversion_rates[apiData.currency];
+
+        setUsdcToUsd(usdcToUsdRate);
+        setUsdToLocal(usdToLocalRate);
+      } catch (error) {
+        console.error("Error fetching geolocation data:", error);
+      }
+    }
+
+    // Only run in the browser
+    if (typeof window !== "undefined") {
+      fetchData();
+    }
+  }, []);
+
 
   // Show loading state
   if (loading) {
@@ -696,13 +729,15 @@ export default function PaymentPage() {
               </div>
 
               <div>
-                <span className="pr-1">{flag.emoji}</span>
+                <span className="pr-1">{flag}</span>
 
-                <span className="pr-1">{localCurrency.code}</span>
+                <span className="pr-1">{code}</span>
                 <span className="text-lg font-bold text-gray-900">
-                  {convertFromUsdc(invoice.amount, localCurrency.code)?.toFixed(
+                  {/* {convertFromUsdc(invoice.amount, localCurrency.code)?.toFixed(
                     3
-                  )}
+                  )} */}
+
+                  {(usdcToUsd * invoice.amount * usdToLocal)?.toFixed(3)}
                 </span>
               </div>
             </div>
