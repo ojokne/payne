@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
-
 interface IpApiResponse {
   status: string;
   country: string;
@@ -14,7 +13,6 @@ interface IpApiResponse {
 // Import the country flag emojis
 import countryToFlagEmoji from "@/constants/countryFlags";
 import { Flag } from "@/types/types";
-
 
 // Define interface for our stored geolocation data
 interface GeoData {
@@ -68,7 +66,7 @@ export default function Header() {
         }
 
         // Otherwise, fetch fresh data with the new API endpoint
-        const response = await fetch("http://ip-api.com/json/?fields=8413187");
+        const response = await fetch("/api/geo-location");
 
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
