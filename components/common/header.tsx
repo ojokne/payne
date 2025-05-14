@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
+import countryToFlagEmoji from "@/constants/countryFlags";
 
 // Define TypeScript interfaces for IP API response
 interface Flag {
@@ -9,27 +11,17 @@ interface Flag {
   emoji_unicode: string;
 }
 
-interface IpWhoIsResponse {
+interface IpInfoResponse {
   ip: string;
-  success: boolean;
-  country: string;
-  country_code: string;
-  flag: Flag;
-  [key: string]: any; // For other properties we don't explicitly use
+  hostname?: string;
+  city?: string;
+  region?: string;
+  country: string; // This is the country code, e.g. "UG"
+  loc?: string;
+  org?: string;
+  timezone?: string;
 }
 
-// Define interface for Exchange Rate API response
-interface ExchangeRateResponse {
-  result: string;
-  documentation: string;
-  terms_of_use: string;
-  time_last_update_unix: number;
-  time_last_update_utc: string;
-  time_next_update_unix: number;
-  time_next_update_utc: string;
-  base_code: string;
-  conversion_rates: Record<string, number>;
-}
 
 // Define interface for our stored geolocation data
 interface GeoData {
@@ -83,22 +75,47 @@ export default function Header() {
         }
 
         // Otherwise, fetch fresh data
-        const response = await fetch("https://ipwhois.io/");
+        const response = await fetch("https://ipinfo.io/json");
 
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        const data: IpWhoIsResponse = await response.json();
+        const ipData: IpInfoResponse = await response.json();
 
-        if (!data.success) {
-          throw new Error("API returned unsuccessful response");
+        // Ensure country code exists
+        if (!ipData.country) {
+          throw new Error("Country code missing from response");
         }
+
+        // Create flag object from country code
+        const flagEmoji = countryToFlagEmoji[ipData.country] || "🌐";
+        const flagData: Flag = {
+          img: `https://flagcdn.com/${ipData.country.toLowerCase()}.svg`,
+          emoji: flagEmoji,
+          emoji_unicode: "", // Not provided by ipinfo, but kept for interface compatibility
+        };
+
+        // Create response object with success property for compatibility
+        const data = {
+          ...ipData,
+          success: true,
+          country_code: ipData.country,
+          flag: flagData,
+        };
 
         // Store data in session storage
         sessionStorage.setItem("countryFlag", JSON.stringify(data.flag));
-        sessionStorage.setItem("countryCode", data.country_code);
-        sessionStorage.setItem("country", data.country); // Also store country name
+        sessionStorage.setItem("country", ipData.country);
+
+        // Store local currency code based on country
+        
+        const mappedCurrency = (
+          countryCurrencyMapping as Record<string, string>
+        )[ipData.country];
+        if (mappedCurrency) {
+          sessionStorage.setItem("countryCurrencyCode", mappedCurrency);
+        }
 
         // Update state
         setGeoData({
@@ -118,7 +135,6 @@ export default function Header() {
     }
   }, []);
 
-  // New effect for exchange rate data - runs after geo data is loaded
   useEffect(() => {
     async function fetchExchangeRates() {
       try {
