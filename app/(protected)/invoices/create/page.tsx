@@ -26,10 +26,44 @@ import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
 import { convertToUsdc } from "@/utils";
 import Image from "next/image";
 import { CurrencyData } from "@/types/types";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function CreateInvoicePage() {
   const router = useRouter();
   const { address } = useAccount();
+
+  // Add wallet connection check at the top
+  if (!address) {
+    return (
+      <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="flex items-center pb-4">
+          <ArrowLeft className="text-indigo-600" />
+          <button
+            onClick={() => router.push("/invoices")}
+            className="text-sm text-indigo-600 hover:cursor-pointer mx-3"
+          >
+            Back to Invoices
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-md">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Wallet Connection Required
+          </h3>
+          <div className="mb-6">
+            <p className="text-gray-600">
+              To create an invoice, you need to connect your digital wallet
+              first. This ensures your invoices can be paid directly to your
+              wallet address.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <ConnectButton />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -231,7 +265,6 @@ export default function CreateInvoicePage() {
       }
     }
   }, []);
-
 
   // Calculate USDC equivalent whenever amount or currency changes
   useEffect(() => {
