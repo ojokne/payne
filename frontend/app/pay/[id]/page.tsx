@@ -6,7 +6,6 @@ import { useAccount, useBalance, useWriteContract, useConfig } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Check, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { USDC_ADDRESS } from "@/constants/constants";
 import { erc20Abi, parseUnits } from "viem";
 import {
   collection,
@@ -98,7 +97,7 @@ export default function PaymentPage() {
 
     writeContract(
       {
-        address: USDC_ADDRESS,
+        address: process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}`,
         abi: erc20Abi,
         functionName: "transfer",
         args: [
