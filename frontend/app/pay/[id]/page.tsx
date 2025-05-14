@@ -640,9 +640,12 @@ export default function PaymentPage() {
             <span className="text-sm font-medium text-gray-500">
               Amount Due
             </span>
-            <span className="text-lg font-bold text-gray-900">
-              ${invoice.amount}
-            </span>
+            <div>
+              <span className="pr-1">USDC</span>
+              <span className="text-lg font-bold text-gray-900">
+                {invoice.amount.toFixed(3)}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -701,7 +704,7 @@ export default function PaymentPage() {
                     Confirming on Blockchain...
                   </>
                 ) : (
-                  `Pay $${invoice?.amount}`
+                  `Pay $${invoice?.amount.toFixed(3)}`
                 )}
               </button>
             </div>
