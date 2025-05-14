@@ -47,10 +47,10 @@ const connectors = connectorsForWallets(
 
 // Create wagmi config for Base Sepolia
 const config = createConfig({
-  chains: [baseSepolia],
+  chains: [base],
   connectors,
   transports: {
-    [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_RPC), 
+    [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC), 
   },
 });
 
@@ -60,7 +60,7 @@ export function Providers(props: { children: ReactNode }) {
     <WagmiProvider config={config}>
       <OnchainKitProvider
         apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
-        chain={baseSepolia}
+        chain={base}
         config={{
           appearance: {
             mode: "auto",
