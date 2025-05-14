@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  subDays,
-  startOfMonth,
-  endOfMonth,
-} from "date-fns";
-import { collection, query, getDocs } from "firebase/firestore";
-import { db } from "@/config/firebase";
+import { subDays, startOfMonth, endOfMonth } from "date-fns";
+import { collection, query, getDocs, where } from "firebase/firestore";
+import { db, auth } from "@/config/firebase";
 import { Invoice } from "@/types/types";
 import {
   CalendarIcon,
@@ -21,9 +17,11 @@ import {
   ArrowDown,
   ArrowUp,
 } from "lucide-react";
-
+import { useRouter } from "next/navigation";
 
 export default function AnalyticsPage() {
+  const router = useRouter();
+
   // State for date range filter
   const [dateRange, setDateRange] = useState("last30days");
   const [customStartDate, setCustomStartDate] = useState("");
@@ -54,6 +52,13 @@ export default function AnalyticsPage() {
       setError("");
 
       try {
+        // Check for authenticated user first
+        const user = auth.currentUser;
+        if (!user) {
+          router.push("/login");
+          return;
+        }
+
         // Determine date range based on filter
         let startDate = new Date();
         let endDate = new Date();
@@ -70,9 +75,9 @@ export default function AnalyticsPage() {
           endDate = new Date(customEndDate);
         }
 
-        // Get all invoices from Firebase
+        // Get invoices ONLY for this merchant
         const invoicesRef = collection(db, "invoices");
-        const q = query(invoicesRef);
+        const q = query(invoicesRef, where("merchantId", "==", user.uid));
         const querySnapshot = await getDocs(q);
 
         const invoicesData: Invoice[] = [];
@@ -401,7 +406,6 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-     
       {/* Top Customers */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-8">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
