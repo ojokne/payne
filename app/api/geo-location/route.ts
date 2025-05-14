@@ -11,9 +11,8 @@ export async function GET(req: NextRequest) {
 
     const ip = ["127.0.0.1", "::1"].includes(rawIp) ? "8.8.8.8" : rawIp;
 
-
     const response = await fetch(
-      `http://ip-api.com/json/41.75.182.133?fields=8413187`,
+      `http://ip-api.com/json/${ip}?fields=8413187`,
       {
         headers: {
           "User-Agent": "Payne App/1.0",
