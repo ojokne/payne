@@ -311,14 +311,17 @@ export default function AnalyticsPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Business Analytics</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
+        <h1 className="text-2xl font-bold text-gray-900 mb-3 sm:mb-0">
+          Business Analytics
+        </h1>
 
-        <div className="flex flex-row items-center">
-          <div className="flex  w-3/4 mx-auto sm:w-auto sm:mx-0 lg:flex-row lg:items-center bg-white border border-gray-200 rounded shadow p-0.5 my-3">
+        <div className="flex flex-col gap-3 w-full sm:w-auto sm:flex-row sm:items-center">
+          {/* Currency selector */}
+          <div className="flex flex-row w-full sm:w-auto bg-white border border-gray-200 rounded shadow p-0.5">
             <button
               onClick={() => setSelectedCurrency("USDC")}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+              className={`flex flex-1 items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
                 selectedCurrency === "USDC"
                   ? "bg-indigo-600 text-white"
                   : "text-gray-600 hover:bg-gray-50"
@@ -330,13 +333,14 @@ export default function AnalyticsPage() {
                 width={20}
                 height={20}
                 alt="USDC Logo"
-              />{" "}
+              />
               <span className="ml-2">USDC</span>
             </button>
+
             {localCurrency.code !== "USD" && (
               <button
                 onClick={() => setSelectedCurrency("USD")}
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                className={`flex flex-1 items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
                   selectedCurrency === "USD"
                     ? "bg-indigo-600 text-white"
                     : "text-gray-600 hover:bg-gray-50"
@@ -350,7 +354,7 @@ export default function AnalyticsPage() {
 
             <button
               onClick={() => setSelectedCurrency(localCurrency.code)}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ml-0.5 transition-colors hover:cursor-pointer ${
+              className={`flex flex-1 items-center justify-center px-3 py-2 text-sm font-medium rounded-md ml-0.5 transition-colors hover:cursor-pointer ${
                 selectedCurrency === localCurrency.code
                   ? "bg-indigo-600 text-white"
                   : "text-gray-600 hover:bg-gray-50"
@@ -366,8 +370,8 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Date range filter */}
-          <div className="flex items-center space-x-3 ms-2">
-            <div className="relative">
+          <div className="w-full sm:w-auto sm:ms-2">
+            <div className="relative w-full">
               <select
                 className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 appearance-none pr-8"
                 value={dateRange}
@@ -387,9 +391,10 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
+          {/* Custom date range inputs */}
           {showCustomDateRange && (
-            <div className="flex items-center space-x-2">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+              <div className="relative w-full sm:w-auto">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <CalendarIcon className="h-4 w-4 text-gray-400" />
                 </div>
@@ -400,8 +405,10 @@ export default function AnalyticsPage() {
                   onChange={(e) => setCustomStartDate(e.target.value)}
                 />
               </div>
-              <span className="text-gray-500">to</span>
-              <div className="relative">
+
+              <span className="text-gray-500 hidden sm:block">to</span>
+
+              <div className="relative w-full sm:w-auto">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <CalendarIcon className="h-4 w-4 text-gray-400" />
                 </div>

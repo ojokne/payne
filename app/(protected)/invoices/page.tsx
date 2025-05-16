@@ -254,14 +254,17 @@ export default function InvoicesPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-        <div className="flex flex-row items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
+        <h1 className="text-2xl font-bold text-gray-900 mb-3 sm:mb-0">
+          Invoices
+        </h1>
+
+        <div className="flex flex-col gap-3 w-full sm:w-auto sm:flex-row sm:items-center">
           {/* currency selector */}
-          <div className="flex  w-3/4 mx-auto sm:w-auto sm:mx-0 lg:flex-row lg:items-center bg-white border border-gray-200 rounded shadow p-0.5 my-3">
+          <div className="flex flex-row w-full sm:w-auto bg-white border border-gray-200 rounded shadow p-0.5">
             <button
               onClick={() => setSelectedCurrency("USDC")}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+              className={`flex flex-1 items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
                 selectedCurrency === "USDC"
                   ? "bg-indigo-600 text-white"
                   : "text-gray-600 hover:bg-gray-50"
@@ -273,13 +276,14 @@ export default function InvoicesPage() {
                 width={20}
                 height={20}
                 alt="USDC Logo"
-              />{" "}
+              />
               <span className="ml-2">USDC</span>
             </button>
+
             {localCurrency.code !== "USD" && (
               <button
                 onClick={() => setSelectedCurrency("USD")}
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                className={`flex flex-1 items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
                   selectedCurrency === "USD"
                     ? "bg-indigo-600 text-white"
                     : "text-gray-600 hover:bg-gray-50"
@@ -293,7 +297,7 @@ export default function InvoicesPage() {
 
             <button
               onClick={() => setSelectedCurrency(localCurrency.code)}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ml-0.5 transition-colors hover:cursor-pointer ${
+              className={`flex flex-1 items-center justify-center px-3 py-2 text-sm font-medium rounded-md ml-0.5 transition-colors hover:cursor-pointer ${
                 selectedCurrency === localCurrency.code
                   ? "bg-indigo-600 text-white"
                   : "text-gray-600 hover:bg-gray-50"
@@ -308,10 +312,11 @@ export default function InvoicesPage() {
             </button>
           </div>
 
-          <div className="ms-2">
+          {/* Create invoice button */}
+          <div className="w-full sm:w-auto sm:ms-2">
             <Link
               href="/invoices/create"
-              className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition shadow-sm"
+              className="flex items-center justify-center w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition shadow-sm"
             >
               <PlusCircle className="h-4 w-4 mr-2" />
               Create Invoice
@@ -414,7 +419,7 @@ export default function InvoicesPage() {
                     </td>
                     <td className="px-6 py-4">{invoice.customerName}</td>
                     <td className="px-6 py-4">
-                     {selectedCurrency === "USDC" ? (
+                      {selectedCurrency === "USDC" ? (
                         <>{invoice.amount.toFixed(3)}</>
                       ) : (
                         <>
