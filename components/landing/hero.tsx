@@ -30,7 +30,7 @@ export default function Hero() {
 
         {/* Main heading with better contrast */}
         <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.15] tracking-tight max-w-4xl mb-6 text-gray-900">
-          Get paid globally in {" "}
+          Get paid in {" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
             USDC{" "}
           </span>
