@@ -15,11 +15,14 @@ import { format } from "date-fns";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import Link from "next/link";
-import { Invoice } from "@/types/types";
+import { CurrencyData, Invoice } from "@/types/types";
 import QRCodeModal from "@/components/common/qr-code-modal";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/config/firebase";
 import { useRouter } from "next/navigation";
+import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
+import Image from "next/image";
+import { convertFromUsdc } from "@/utils";
 
 export default function InvoicesPage() {
   const router = useRouter();
@@ -38,74 +41,12 @@ export default function InvoicesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch invoices from Firestore
-  useEffect(() => {
-    setIsLoading(true);
+  const [localCurrency, setLocalCurrency] = useState<CurrencyData>({
+    code: "USD",
+    flag: null,
+  });
 
-    // Get the current authenticated user first
-    const authUnsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // User not logged in, redirect to login page
-        router.push("/login");
-        return;
-      }
-
-      // Now we have the user ID, create a query filtered by merchantId
-      const invoicesRef = collection(db, "invoices");
-      const q = query(invoicesRef, where("merchantId", "==", user.uid));
-
-      // Set up the real-time listener on the filtered query
-      const invoiceUnsubscribe = onSnapshot(
-        q,
-        (querySnapshot) => {
-          const invoicesData: Invoice[] = [];
-
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-
-            const rawDueDate = new Date(data.dueDate);
-
-            // Create a date with only year, month, day components
-            const dueDate = new Date(
-              rawDueDate.getFullYear(),
-              rawDueDate.getMonth(),
-              rawDueDate.getDate()
-            );
-
-            invoicesData.push({
-              id: doc.id,
-              invoiceNumber: data.invoiceNumber,
-              customerName: data.customerName,
-              amount: parseFloat(data.amount),
-              dueDate: dueDate,
-              status: data.status,
-              paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
-              merchantId: data.merchantId,
-              merchantName: data.merchantName,
-              merchantAddress: data.merchantAddress,
-              paidAt: data?.paidAt,
-            });
-          });
-
-          setInvoices(invoicesData);
-          setIsLoading(false);
-        },
-        (error) => {
-          console.error("Error listening to invoices:", error);
-          setError("Failed to load invoices. Please try again later.");
-          setIsLoading(false);
-        }
-      );
-
-      // Return cleanup function that unsubscribes from both listeners
-      return () => {
-        invoiceUnsubscribe();
-        authUnsubscribe();
-      };
-    });
-
-    // The dependency array can remain empty if router doesn't need to be a dependency
-  }, [router]);
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
 
   // Filter invoices based on search, date and status
   const filteredInvoices = invoices.filter((invoice) => {
@@ -178,6 +119,111 @@ export default function InvoicesPage() {
     }
   };
 
+  // Fetch invoices from Firestore
+  useEffect(() => {
+    setIsLoading(true);
+
+    // Get the current authenticated user first
+    const authUnsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // User not logged in, redirect to login page
+        router.push("/login");
+        return;
+      }
+
+      // Now we have the user ID, create a query filtered by merchantId
+      const invoicesRef = collection(db, "invoices");
+      const q = query(invoicesRef, where("merchantId", "==", user.uid));
+
+      // Set up the real-time listener on the filtered query
+      const invoiceUnsubscribe = onSnapshot(
+        q,
+        (querySnapshot) => {
+          const invoicesData: Invoice[] = [];
+
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+
+            const rawDueDate = new Date(data.dueDate);
+
+            // Create a date with only year, month, day components
+            const dueDate = new Date(
+              rawDueDate.getFullYear(),
+              rawDueDate.getMonth(),
+              rawDueDate.getDate()
+            );
+
+            invoicesData.push({
+              id: doc.id,
+              invoiceNumber: data.invoiceNumber,
+              customerName: data.customerName,
+              amount: parseFloat(data.amount),
+              dueDate: dueDate,
+              status: data.status,
+              paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
+              merchantId: data.merchantId,
+              merchantName: data.merchantName,
+              merchantAddress: data.merchantAddress,
+              paidAt: data?.paidAt,
+            });
+          });
+
+          setInvoices(invoicesData);
+          setIsLoading(false);
+        },
+        (error) => {
+          console.error("Error listening to invoices:", error);
+          setError("Failed to load invoices. Please try again later.");
+          setIsLoading(false);
+        }
+      );
+
+      // Return cleanup function that unsubscribes from both listeners
+      return () => {
+        invoiceUnsubscribe();
+        authUnsubscribe();
+      };
+    });
+
+    // The dependency array can remain empty if router doesn't need to be a dependency
+  }, [router]);
+
+  // load the currency data from sessionStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedCountry = sessionStorage.getItem("country");
+        const storedFlag = sessionStorage.getItem("countryFlag");
+
+        let currencyCode = "USD"; // Default
+
+        // First try to get currency from country name
+        if (storedCountry) {
+          const mappedCurrency = (
+            countryCurrencyMapping as Record<string, string>
+          )[storedCountry];
+          if (mappedCurrency) {
+            currencyCode = mappedCurrency;
+          }
+        }
+
+        if (storedFlag) {
+          setLocalCurrency({
+            code: currencyCode,
+            flag: JSON.parse(storedFlag),
+          });
+
+          setSelectedCurrency(currencyCode);
+
+          // Store the currency code in session storage for later use
+          sessionStorage.setItem("countryCurrencyCode", currencyCode);
+        }
+      } catch (error) {
+        console.error("Error loading currency data:", error);
+      }
+    }
+  }, []);
+
   // Loading state
   if (isLoading) {
     return (
@@ -210,13 +256,68 @@ export default function InvoicesPage() {
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-        <Link
-          href="/invoices/create"
-          className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition shadow-sm"
-        >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Create Invoice
-        </Link>
+        <div className="flex flex-row items-center">
+          {/* currency selector */}
+          <div className="flex  w-3/4 mx-auto sm:w-auto sm:mx-0 lg:flex-row lg:items-center bg-white border border-gray-200 rounded shadow p-0.5 my-3">
+            <button
+              onClick={() => setSelectedCurrency("USDC")}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                selectedCurrency === "USDC"
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+              aria-current={selectedCurrency === "USDC"}
+            >
+              <Image
+                src="https://www.cryptologos.cc/logos/usd-coin-usdc-logo.svg?v=040"
+                width={20}
+                height={20}
+                alt="USDC Logo"
+              />{" "}
+              <span className="ml-2">USDC</span>
+            </button>
+            {localCurrency.code !== "USD" && (
+              <button
+                onClick={() => setSelectedCurrency("USD")}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                  selectedCurrency === "USD"
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+                aria-current={selectedCurrency === "USD"}
+              >
+                <span className="mr-2">$</span>
+                <span>USD</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => setSelectedCurrency(localCurrency.code)}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ml-0.5 transition-colors hover:cursor-pointer ${
+                selectedCurrency === localCurrency.code
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+              aria-current={selectedCurrency === localCurrency.code}
+              disabled={selectedCurrency === localCurrency.code}
+            >
+              {localCurrency.flag && (
+                <span className="mr-2">{localCurrency.flag.emoji}</span>
+              )}
+              <span>{localCurrency.code}</span>
+            </button>
+          </div>
+
+          <div className="ms-2">
+            <Link
+              href="/invoices/create"
+              className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition shadow-sm"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Create Invoice
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Filters section */}
@@ -295,7 +396,7 @@ export default function InvoicesPage() {
               <tr>
                 <th className="px-6 py-3">Invoice ID</th>
                 <th className="px-6 py-3">Customer</th>
-                <th className="px-6 py-3">Amount (USDC)</th>
+                <th className="px-6 py-3">Amount ({selectedCurrency})</th>
                 <th className="px-6 py-3">Due Date</th>
                 <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3">Actions</th>
@@ -312,7 +413,12 @@ export default function InvoicesPage() {
                       {invoice.invoiceNumber}
                     </td>
                     <td className="px-6 py-4">{invoice.customerName}</td>
-                    <td className="px-6 py-4">{invoice.amount.toFixed(6)}</td>
+                    <td className="px-6 py-4">
+                      {convertFromUsdc(
+                        invoice.amount,
+                        localCurrency.code
+                      )?.toFixed(3)}
+                    </td>
                     <td className="px-6 py-4">
                       {format(new Date(invoice.dueDate), "MMM dd, yyyy")}
                     </td>
