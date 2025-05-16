@@ -30,17 +30,16 @@ export default function Hero() {
 
         {/* Main heading with better contrast */}
         <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.15] tracking-tight max-w-4xl mb-6 text-gray-900">
-          Get paid in {" "}
+          Seamless {" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
             USDC{" "}
           </span>
-          — no bank account, no delays.
+          payments for merchants in Africa
         </h1>
 
         {/* Subheading with improved contrast */}
         <p className="text-xl md:text-2xl text-gray-700 max-w-3xl mx-auto leading-relaxed mb-10">
-          Empower your business: Accept fast, secure USDC payments on Base with
-          easy-to-use smart wallets.{" "}
+          — no bank account, no delays
         </p>
 
         {/* Center-aligned CTA buttons with improved contrast */}
