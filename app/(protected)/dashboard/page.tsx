@@ -157,8 +157,8 @@ export default function Dashboard() {
     setInvoicesLoading(true);
 
     // Initialize as undefined
-    let paidUnsubscribe: (() => void) ;
-    let pendingUnsubscribe: (() => void) ;
+    let paidUnsubscribe: () => void;
+    let pendingUnsubscribe: () => void;
 
     // Store the auth unsubscribe function
     const authUnsubscribe = onAuthStateChanged(auth, (user) => {
@@ -252,7 +252,7 @@ export default function Dashboard() {
       if (typeof paidUnsubscribe === "function") paidUnsubscribe();
       if (typeof pendingUnsubscribe === "function") pendingUnsubscribe();
     };
-  }, []); 
+  }, []);
 
   if (!address) {
     return (
@@ -310,18 +310,20 @@ export default function Dashboard() {
               <span className="ml-2">USDC</span>
             </button>
 
-            <button
-              onClick={() => setSelectedCurrency("USD")}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
-                selectedCurrency === "USD"
-                  ? "bg-indigo-600 text-white"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-              aria-current={selectedCurrency === "USD"}
-            >
-              <span className="mr-2">$</span>
-              <span>USD</span>
-            </button>
+            {localCurrency.code !== "USD" && (
+              <button
+                onClick={() => setSelectedCurrency("USD")}
+                className={`flex flex-1 items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                  selectedCurrency === "USD"
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+                aria-current={selectedCurrency === "USD"}
+              >
+                <span className="mr-2">$</span>
+                <span>USD</span>
+              </button>
+            )}
 
             <button
               onClick={() => setSelectedCurrency(localCurrency.code)}

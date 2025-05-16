@@ -55,7 +55,6 @@ export default function CreateInvoicePage() {
   // USDC equivalent state
   const [usdcEquivalent, setUsdcEquivalent] = useState<number | null>(null);
 
-
   // Function to generate a unique invoice number
   const generateInvoiceNumber = async () => {
     try {
@@ -192,12 +191,11 @@ export default function CreateInvoicePage() {
     }
   };
 
-    // Generate invoice number when component mounts
+  // Generate invoice number when component mounts
   useEffect(() => {
     generateInvoiceNumber();
   }, []);
 
-  
   // Calculate USDC equivalent whenever amount or currency changes
   useEffect(() => {
     if (formData.amount && !isNaN(parseFloat(formData.amount))) {
@@ -208,7 +206,6 @@ export default function CreateInvoicePage() {
       setUsdcEquivalent(null);
     }
   }, [formData.amount, selectedCurrency]);
-
 
   // Add wallet connection check at the top
   if (!address) {
@@ -243,7 +240,6 @@ export default function CreateInvoicePage() {
     );
   }
 
-
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
       <div className="flex items-center  pb-4">
@@ -260,18 +256,20 @@ export default function CreateInvoicePage() {
 
         {/* Enhanced currency selector */}
         <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm p-0.5 ">
-          <button
-            onClick={() => setSelectedCurrency("USD")}
-            className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
-              selectedCurrency === "USD"
-                ? "bg-indigo-600 text-white"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
-            aria-current={selectedCurrency === "USD"}
-          >
-            <span className="mr-2">$</span>
-            <span>USD</span>
-          </button>
+          {localCurrency.code !== "USD" && (
+            <button
+              onClick={() => setSelectedCurrency("USD")}
+              className={`flex flex-1 items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                selectedCurrency === "USD"
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+              aria-current={selectedCurrency === "USD"}
+            >
+              <span className="mr-2">$</span>
+              <span>USD</span>
+            </button>
+          )}
 
           <button
             onClick={() => setSelectedCurrency(localCurrency.code)}
