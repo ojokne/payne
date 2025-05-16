@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { subDays, startOfMonth, endOfMonth } from "date-fns";
 import { collection, query, getDocs, where } from "firebase/firestore";
 import { db, auth } from "@/config/firebase";
-import { Invoice } from "@/types/types";
+import { CurrencyData, Invoice } from "@/types/types";
 import {
   CalendarIcon,
   ChevronDown,
@@ -18,6 +18,9 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import countryCurrencyMapping from "@/constants/country_currency_mapping.json";
+import Image from "next/image";
+import { convertFromUsdc } from "@/utils";
 
 export default function AnalyticsPage() {
   const router = useRouter();
@@ -45,87 +48,12 @@ export default function AnalyticsPage() {
     isPositive: true,
   });
 
-  // Fetch invoice data
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      setIsLoading(true);
-      setError("");
+  const [localCurrency, setLocalCurrency] = useState<CurrencyData>({
+    code: "USD",
+    flag: null,
+  });
 
-      try {
-        // Check for authenticated user first
-        const user = auth.currentUser;
-        if (!user) {
-          router.push("/login");
-          return;
-        }
-
-        // Determine date range based on filter
-        let startDate = new Date();
-        let endDate = new Date();
-
-        if (dateRange === "last7days") {
-          startDate = subDays(new Date(), 7);
-        } else if (dateRange === "last30days") {
-          startDate = subDays(new Date(), 30);
-        } else if (dateRange === "thisMonth") {
-          startDate = startOfMonth(new Date());
-          endDate = endOfMonth(new Date());
-        } else if (dateRange === "custom" && customStartDate && customEndDate) {
-          startDate = new Date(customStartDate);
-          endDate = new Date(customEndDate);
-        }
-
-        // Get invoices ONLY for this merchant
-        const invoicesRef = collection(db, "invoices");
-        const q = query(invoicesRef, where("merchantId", "==", user.uid));
-        const querySnapshot = await getDocs(q);
-
-        const invoicesData: Invoice[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          const dueDate = new Date(data.dueDate);
-          const paidAt = data.paidAt ? new Date(data.paidAt) : undefined;
-
-          // Convert to Invoice object
-          const invoice: Invoice = {
-            id: doc.id,
-            invoiceNumber: data.invoiceNumber,
-            customerName: data.customerName,
-            amount: parseFloat(data.amount),
-            dueDate: dueDate,
-            status: data.status,
-            paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
-            merchantId: data.merchantId,
-            merchantName: data.merchantName,
-            merchantAddress: data.merchantAddress,
-            paidAt: paidAt,
-          };
-
-          // Filter by date range if needed for paid invoices
-          if (invoice.status === "paid" && invoice.paidAt) {
-            if (invoice.paidAt >= startDate && invoice.paidAt <= endDate) {
-              invoicesData.push(invoice);
-            }
-          } else {
-            // For pending/overdue invoices, just include them all
-            invoicesData.push(invoice);
-          }
-        });
-
-        setInvoices(invoicesData);
-
-        // Calculate derived statistics
-        processAnalytics(invoicesData, startDate, endDate);
-      } catch (err) {
-        console.error("Error fetching invoice data:", err);
-        setError("Failed to load analytics data. Please try again later.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchInvoices();
-  }, [dateRange, customStartDate, customEndDate]);
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
 
   // Process invoice data into analytics
   const processAnalytics = (
@@ -235,6 +163,124 @@ export default function AnalyticsPage() {
     }
   };
 
+  // Fetch invoice data
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        // Check for authenticated user first
+        const user = auth.currentUser;
+        if (!user) {
+          router.push("/login");
+          return;
+        }
+
+        // Determine date range based on filter
+        let startDate = new Date();
+        let endDate = new Date();
+
+        if (dateRange === "last7days") {
+          startDate = subDays(new Date(), 7);
+        } else if (dateRange === "last30days") {
+          startDate = subDays(new Date(), 30);
+        } else if (dateRange === "thisMonth") {
+          startDate = startOfMonth(new Date());
+          endDate = endOfMonth(new Date());
+        } else if (dateRange === "custom" && customStartDate && customEndDate) {
+          startDate = new Date(customStartDate);
+          endDate = new Date(customEndDate);
+        }
+
+        // Get invoices ONLY for this merchant
+        const invoicesRef = collection(db, "invoices");
+        const q = query(invoicesRef, where("merchantId", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+
+        const invoicesData: Invoice[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const dueDate = new Date(data.dueDate);
+          const paidAt = data.paidAt ? new Date(data.paidAt) : undefined;
+
+          // Convert to Invoice object
+          const invoice: Invoice = {
+            id: doc.id,
+            invoiceNumber: data.invoiceNumber,
+            customerName: data.customerName,
+            amount: parseFloat(data.amount),
+            dueDate: dueDate,
+            status: data.status,
+            paymentLink: `${window.location.origin}/pay/${data.invoiceNumber}`,
+            merchantId: data.merchantId,
+            merchantName: data.merchantName,
+            merchantAddress: data.merchantAddress,
+            paidAt: paidAt,
+          };
+
+          // Filter by date range if needed for paid invoices
+          if (invoice.status === "paid" && invoice.paidAt) {
+            if (invoice.paidAt >= startDate && invoice.paidAt <= endDate) {
+              invoicesData.push(invoice);
+            }
+          } else {
+            // For pending/overdue invoices, just include them all
+            invoicesData.push(invoice);
+          }
+        });
+
+        setInvoices(invoicesData);
+
+        // Calculate derived statistics
+        processAnalytics(invoicesData, startDate, endDate);
+      } catch (err) {
+        console.error("Error fetching invoice data:", err);
+        setError("Failed to load analytics data. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInvoices();
+  }, [dateRange, customStartDate, customEndDate]);
+
+  // load the currency data from sessionStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedCountry = sessionStorage.getItem("country");
+        const storedFlag = sessionStorage.getItem("countryFlag");
+
+        let currencyCode = "USD"; // Default
+
+        // First try to get currency from country name
+        if (storedCountry) {
+          const mappedCurrency = (
+            countryCurrencyMapping as Record<string, string>
+          )[storedCountry];
+          if (mappedCurrency) {
+            currencyCode = mappedCurrency;
+          }
+        }
+
+        if (storedFlag) {
+          setLocalCurrency({
+            code: currencyCode,
+            flag: JSON.parse(storedFlag),
+          });
+
+          setSelectedCurrency(currencyCode);
+
+          // Store the currency code in session storage for later use
+          sessionStorage.setItem("countryCurrencyCode", currencyCode);
+        }
+      } catch (error) {
+        console.error("Error loading currency data:", error);
+      }
+    }
+  }, []);
+
   // Loading state
   if (isLoading) {
     return (
@@ -268,24 +314,76 @@ export default function AnalyticsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Business Analytics</h1>
 
-        {/* Date range filter */}
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <select
-              className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 appearance-none pr-8"
-              value={dateRange}
-              onChange={(e) => {
-                setDateRange(e.target.value);
-                setShowCustomDateRange(e.target.value === "custom");
-              }}
+        <div className="flex flex-row items-center">
+          <div className="flex  w-3/4 mx-auto sm:w-auto sm:mx-0 lg:flex-row lg:items-center bg-white border border-gray-200 rounded shadow p-0.5 my-3">
+            <button
+              onClick={() => setSelectedCurrency("USDC")}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                selectedCurrency === "USDC"
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+              aria-current={selectedCurrency === "USDC"}
             >
-              <option value="last7days">Last 7 Days</option>
-              <option value="last30days">Last 30 Days</option>
-              <option value="thisMonth">This Month</option>
-              <option value="custom">Custom Range</option>
-            </select>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <ChevronDown className="h-4 w-4 text-gray-400" />
+              <Image
+                src="https://www.cryptologos.cc/logos/usd-coin-usdc-logo.svg?v=040"
+                width={20}
+                height={20}
+                alt="USDC Logo"
+              />{" "}
+              <span className="ml-2">USDC</span>
+            </button>
+            {localCurrency.code !== "USD" && (
+              <button
+                onClick={() => setSelectedCurrency("USD")}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:cursor-pointer ${
+                  selectedCurrency === "USD"
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+                aria-current={selectedCurrency === "USD"}
+              >
+                <span className="mr-2">$</span>
+                <span>USD</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => setSelectedCurrency(localCurrency.code)}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ml-0.5 transition-colors hover:cursor-pointer ${
+                selectedCurrency === localCurrency.code
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+              aria-current={selectedCurrency === localCurrency.code}
+              disabled={selectedCurrency === localCurrency.code}
+            >
+              {localCurrency.flag && (
+                <span className="mr-2">{localCurrency.flag.emoji}</span>
+              )}
+              <span>{localCurrency.code}</span>
+            </button>
+          </div>
+
+          {/* Date range filter */}
+          <div className="flex items-center space-x-3 ms-2">
+            <div className="relative">
+              <select
+                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 appearance-none pr-8"
+                value={dateRange}
+                onChange={(e) => {
+                  setDateRange(e.target.value);
+                  setShowCustomDateRange(e.target.value === "custom");
+                }}
+              >
+                <option value="last7days">Last 7 Days</option>
+                <option value="last30days">Last 30 Days</option>
+                <option value="thisMonth">This Month</option>
+                <option value="custom">Custom Range</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              </div>
             </div>
           </div>
 
@@ -331,7 +429,14 @@ export default function AnalyticsPage() {
           </div>
           <div className="flex items-end space-x-1">
             <p className="text-2xl font-bold text-gray-900">
-              ${totalRevenue.toFixed(2)}
+              {selectedCurrency === "USDC" ? (
+                <>{totalRevenue.toFixed(3)} USDC</>
+              ) : (
+                <>
+                  {convertFromUsdc(totalRevenue, selectedCurrency)?.toFixed(3)}{" "}
+                  {selectedCurrency}{" "}
+                </>
+              )}{" "}
             </p>
             {comparisonData.percentChange > 0 && (
               <div
@@ -361,7 +466,19 @@ export default function AnalyticsPage() {
           </div>
           <p className="text-2xl font-bold text-gray-900">{paidInvoices}</p>
           <p className="text-xs text-gray-500 mt-1">
-            Avg. ${averageInvoiceValue.toFixed(2)} per invoice
+            Avg.
+            {selectedCurrency === "USDC" ? (
+              <>{averageInvoiceValue.toFixed(3)} USDC</>
+            ) : (
+              <>
+                {convertFromUsdc(
+                  averageInvoiceValue,
+                  selectedCurrency
+                )?.toFixed(3)}{" "}
+                {selectedCurrency}{" "}
+              </>
+            )}{" "}
+            per invoice
           </p>
         </div>
 
@@ -376,7 +493,14 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            ${pendingRevenue.toFixed(2)}
+            {selectedCurrency === "USDC" ? (
+              <>{pendingRevenue.toFixed(3)} USDC</>
+            ) : (
+              <>
+                {convertFromUsdc(pendingRevenue, selectedCurrency)?.toFixed(3)}{" "}
+                {selectedCurrency}{" "}
+              </>
+            )}{" "}
           </p>
           <p className="text-xs text-gray-500 mt-1">Awaiting payment</p>
         </div>
@@ -420,7 +544,7 @@ export default function AnalyticsPage() {
                     Customer
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Revenue
+                    Revenue ({selectedCurrency})
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     % of Total
@@ -434,7 +558,16 @@ export default function AnalyticsPage() {
                       {customer.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                      ${customer.total.toFixed(2)}
+                      {selectedCurrency === "USDC" ? (
+                        <>{customer.total.toFixed(3)}</>
+                      ) : (
+                        <>
+                          {convertFromUsdc(
+                            customer.total,
+                            selectedCurrency
+                          )?.toFixed(3)}
+                        </>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                       {totalRevenue > 0

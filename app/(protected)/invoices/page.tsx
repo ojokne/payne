@@ -414,10 +414,16 @@ export default function InvoicesPage() {
                     </td>
                     <td className="px-6 py-4">{invoice.customerName}</td>
                     <td className="px-6 py-4">
-                      {convertFromUsdc(
-                        invoice.amount,
-                        localCurrency.code
-                      )?.toFixed(3)}
+                     {selectedCurrency === "USDC" ? (
+                        <>{invoice.amount.toFixed(3)}</>
+                      ) : (
+                        <>
+                          {convertFromUsdc(
+                            invoice.amount,
+                            selectedCurrency
+                          )?.toFixed(3)}
+                        </>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       {format(new Date(invoice.dueDate), "MMM dd, yyyy")}
